@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Статистика - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h2 mb-4">Статистика</h1>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Статистика по отделам</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Отдел</th>
+                                    <th>Страниц</th>
+                                    <th>Документов</th>
+                                    <th>Объем</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dept in department_stats %}
+                                <tr>
+                                    <td>{{ dept.name }}</td>
+                                    <td>{{ dept.total_pages|default:0 }}</td>
+                                    <td>{{ dept.total_documents|default:0 }}</td>
+                                    <td>{{ dept.total_size|filesizeformat }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Топ пользователей</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Пользователь</th>
+                                    <th>Страниц</th>
+                                    <th>Документов</th>
+                                    <th>Объем</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in user_stats %}
+                                <tr>
+                                    <td>{{ user.get_full_name|default:user.username }}</td>
+                                    <td>{{ user.total_pages|default:0 }}</td>
+                                    <td>{{ user.total_documents|default:0 }}</td>
+                                    <td>{{ user.total_size|filesizeformat }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Распределение по отделам</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="departmentChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('departmentChart').getContext('2d');
+    const data = {
+        labels: [{% for dept in department_stats %}'{{ dept.name }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Страниц',
+            data: [{% for dept in department_stats %}{{ dept.total_pages|default:0 }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.5)',
+                'rgba(54, 162, 235, 0.5)',
+                'rgba(255, 206, 86, 0.5)',
+                'rgba(75, 192, 192, 0.5)',
+                'rgba(153, 102, 255, 0.5)',
+            ]
+        }]
+    };
+    new Chart(ctx, {
+        type: 'bar',
+        data: data,
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

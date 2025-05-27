@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block title %}Панель управления - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h2 mb-4">Панель управления</h1>
+
+    <div class="row">
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Всего страниц</h5>
+                    <p class="card-text display-4">{{ total_pages }}</p>
+                    <p class="card-text text-muted">за последние 30 дней</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Всего документов</h5>
+                    <p class="card-text display-4">{{ total_documents }}</p>
+                    <p class="card-text text-muted">за последние 30 дней</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Статистика по дням</h5>
+                    <canvas id="dailyStats"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('dailyStats').getContext('2d');
+    const data = {
+        labels: [{% for stat in daily_stats %}'{{ stat.date|date:"d.m.Y" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Страниц',
+            data: [{% for stat in daily_stats %}{{ stat.pages }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }, {
+            label: 'Документов',
+            data: [{% for stat in daily_stats %}{{ stat.documents }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            borderColor: 'rgb(255, 99, 132)',
+            tension: 0.1
+        }]
+    };
+    new Chart(ctx, {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

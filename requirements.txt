@@ -1,0 +1,28 @@
+# Django и его компоненты
+Django==5.2.1
+asgiref==3.8.1
+sqlparse==0.5.3
+
+# Интерфейс и формы
+django-bootstrap5==25.1
+django-crispy-forms==2.4
+crispy-bootstrap5==2025.4
+
+# Таблицы и фильтры
+django-tables2==2.7.5
+django-filter==25.1
+
+# Импорт/экспорт данных
+django-import-export==4.3.7
+tablib==3.8.0
+diff-match-patch==20241021
+
+# База данных
+psycopg2-binary==2.9.10
+
+# Утилиты
+python-dotenv==1.1.0
+whitenoise==6.9.0
+
+# Windows-специфичные пакеты (только для Windows)
+pywin32==310; sys_platform == 'win32' 

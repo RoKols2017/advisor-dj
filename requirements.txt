@@ -26,3 +26,6 @@ whitenoise==6.9.0
 
 # Windows-специфичные пакеты (только для Windows)
 pywin32==310; sys_platform == 'win32' 
+
+# Для демона пакетной загрузки
+watchdog~=6.0.0

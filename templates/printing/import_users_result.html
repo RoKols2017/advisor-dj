@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load django_bootstrap5 %}
+
+{% block title %}Импорт пользователей{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h3 mb-4">Импорт пользователей из CSV</h1>
+    <form method="post" enctype="multipart/form-data" class="mb-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="file" class="form-label">CSV файл</label>
+            <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Загрузить</button>
+    </form>
+
+    {% if result %}
+        <div class="card mt-4">
+            <div class="card-body">
+                {% if result.error %}
+                    <div class="alert alert-danger">{{ result.error }}</div>
+                {% else %}
+                    <div class="alert alert-success">
+                        <strong>Импорт завершён!</strong><br>
+                        Создано пользователей: <b>{{ result.created }}</b>
+                    </div>
+                    {% if result.errors %}
+                        <div class="alert alert-warning mt-3">
+                            <strong>Ошибки:</strong>
+                            <ul class="mb-0">
+                                {% for err in result.errors %}
+                                    <li>{{ err }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

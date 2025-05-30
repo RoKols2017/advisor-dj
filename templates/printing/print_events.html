@@ -1,12 +1,18 @@
 {% extends 'base.html' %}
 {% load django_bootstrap5 %}
 {% load django_tables2 %}
+{% load humanize %}
 
 {% block title %}События печати - {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="container py-4">
     <h1 class="h2 mb-4">События печати</h1>
+
+    <div class="mb-3">
+        <span class="fw-bold">Сумма страниц по фильтру:</span>
+        <span class="badge bg-info text-dark fs-5">{{ total_pages|intcomma }}</span>
+    </div>
 
     <div class="card mb-4">
         <div class="card-body">

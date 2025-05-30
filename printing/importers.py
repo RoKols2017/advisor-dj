@@ -5,6 +5,8 @@ from django.db import transaction
 from django.db.models import Q
 from .models import Department, PrintEvent, Printer, PrinterModel, Building, Computer, Port
 from accounts.models import User
+from django.utils import timezone
+from django.conf import settings
 
 logger = logging.getLogger('import')
 
@@ -86,6 +88,9 @@ def import_print_events_from_json(events):
                 pages = int(event.get('Param8') or 0)
                 timestamp_ms = int(event.get('TimeCreated').replace('/Date(', '').replace(')/',''))
                 timestamp = datetime.fromtimestamp(timestamp_ms / 1000)
+                # Приводим к aware если нужно
+                if settings.USE_TZ and timezone.is_naive(timestamp):
+                    timestamp = timezone.make_aware(timestamp, timezone.get_default_timezone())
                 job_id = event.get('JobID') or 'UNKNOWN'
                 
                 # Проверяем существование события
@@ -156,7 +161,7 @@ def import_print_events_from_json(events):
                 computer = None
                 computer_name = (event.get('Param4') or '').strip().lower()
                 if computer_name:
-                    computer, created = Computer.objects.get_or_create(
+                    computer, created_computer = Computer.objects.get_or_create(
                         name__iexact=computer_name,
                         defaults={'name': computer_name}
                     )
@@ -165,7 +170,7 @@ def import_print_events_from_json(events):
                 port = None
                 port_name = (event.get('Param6') or '').strip().lower()
                 if port_name:
-                    port, created = Port.objects.get_or_create(
+                    port, created_port = Port.objects.get_or_create(
                         name__iexact=port_name,
                         defaults={'name': port_name}
                     )

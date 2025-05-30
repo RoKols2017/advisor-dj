@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Информация о пользователе{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <h2>Информация о пользователе</h2>
+    <ul class="list-group mb-4">
+        <li class="list-group-item"><strong>username:</strong> {{ request.user.username }}</li>
+        <li class="list-group-item"><strong>fio:</strong> {{ request.user.fio }}</li>
+        <li class="list-group-item"><strong>first_name:</strong> {{ request.user.first_name }}</li>
+        <li class="list-group-item"><strong>last_name:</strong> {{ request.user.last_name }}</li>
+        <li class="list-group-item"><strong>email:</strong> {{ request.user.email }}</li>
+        <li class="list-group-item"><strong>department:</strong> {{ request.user.department }}</li>
+        <li class="list-group-item"><strong>is_staff:</strong> {{ request.user.is_staff }}</li>
+        <li class="list-group-item"><strong>is_superuser:</strong> {{ request.user.is_superuser }}</li>
+        <li class="list-group-item"><strong>last_login:</strong> {{ request.user.last_login }}</li>
+        <li class="list-group-item"><strong>date_joined:</strong> {{ request.user.date_joined }}</li>
+        <li class="list-group-item"><strong>Группы Django:</strong> {% for g in request.user.groups.all %}{{ g.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</li>
+        {% if request.META.REMOTE_USER %}
+        <li class="list-group-item"><strong>REMOTE_USER:</strong> {{ request.META.REMOTE_USER }}</li>
+        {% endif %}
+    </ul>
+    <h5>REMOTE_* переменные из META:</h5>
+    <ul class="list-group">
+        {% for k, v in request.META.items %}
+            {% if k|cut:'REMOTE_' != k %}
+                <li class="list-group-item"><strong>{{ k }}:</strong> {{ v }}</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %} 

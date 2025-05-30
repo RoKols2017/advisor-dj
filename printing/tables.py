@@ -3,9 +3,9 @@ from .models import PrintEvent
 
 
 class PrintEventTable(tables.Table):
-    user = tables.Column(linkify=True)
-    printer = tables.Column(linkify=True)
-    computer = tables.Column(linkify=True)
+    user = tables.Column()
+    printer = tables.Column()
+    computer = tables.Column()
     byte_size = tables.Column(verbose_name='Размер')
     pages = tables.Column(verbose_name='Страниц')
 

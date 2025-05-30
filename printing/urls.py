@@ -10,4 +10,5 @@ urlpatterns = [
     path('tree/', views.PrintTreeView.as_view(), name='print_tree'),
     path('import/users/', views.ImportUsersView.as_view(), name='import_users'),
     path('import/print-events/', views.ImportPrintEventsView.as_view(), name='import_print_events'),
+    path('user-info/', views.UserInfoView.as_view(), name='user_info'),
 ] 

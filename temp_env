@@ -1,0 +1,13 @@
+# Пример .env для демона загрузки событий печати
+# For Windows
+PRINT_EVENTS_WATCH_DIR=C:/path/to/watch_dir
+PRINT_EVENTS_PROCESSED_DIR=C:/path/to/processed_dir
+
+# For Linux
+PRINT_EVENTS_WATCH_DIR=/home/username/print_events/incoming
+PRINT_EVENTS_PROCESSED_DIR=/home/username/print_events/processed
+
+LOG_TO_FILE=1 (по умолчанию) — писать в файл logs/project.log
+LOG_TO_CONSOLE=1 (по умолчанию) — писать в консоль
+LOG_TO_FILE=0 — не писать в файл
+LOG_TO_CONSOLE=0 — не писать в консоль

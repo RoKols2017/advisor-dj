@@ -1,168 +1,129 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load bootstrap5 %}
+{% load django_bootstrap5 %}
+{% load humanize %}
 
 {% block title %}Дерево печати{% endblock %}
 
-{% block extra_css %}
-<style>
-    .tree ul {
-        list-style-type: none;
-        padding-left: 2rem;
-    }
-    .tree-item {
-        margin: 0.5rem 0;
-        padding: 0.5rem;
-        border-radius: 0.25rem;
-        transition: background-color 0.2s;
-    }
-    .tree-item:hover {
-        background-color: rgba(0,0,0,0.05);
-    }
-    .toggle {
-        cursor: pointer;
-        user-select: none;
-    }
-    .toggle:hover {
-        opacity: 0.8;
-    }
-    .badge {
-        font-size: 0.9em;
-    }
-    .hidden {
-        display: none;
-    }
-    .document-entry {
-        font-family: monospace;
-        white-space: pre;
-    }
-    .dept-item { border-left: 4px solid var(--bs-primary); }
-    .printer-item { border-left: 4px solid var(--bs-success); }
-    .user-item { border-left: 4px solid var(--bs-info); }
-    .doc-item { border-left: 4px solid var(--bs-secondary); }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3">🌲 Структура печати по подразделениям</h1>
-        <a href="{% url 'printing:export_tree' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" 
-           class="btn btn-success">
-            <i class="fas fa-file-excel me-2"></i>Выгрузить в Excel
-        </a>
+    <div class="mb-4">
+        <h1 class="h3">Структура печати по подразделениям</h1>
     </div>
-
     <div class="card mb-4">
         <div class="card-body">
             <form method="GET" class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">📅 Период с</label>
+                    <label class="form-label">Период с</label>
                     <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">📅 по</label>
+                    <label class="form-label">по</label>
                     <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary me-2">
-                        <i class="fas fa-filter me-2"></i>Фильтровать
-                    </button>
-                    <a href="{% url 'printing:print_tree' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-times me-2"></i>Сброс
-                    </a>
+                    <button type="submit" class="btn btn-primary me-2">Фильтровать</button>
+                    <a href="{% url 'printing:print_tree' %}" class="btn btn-outline-secondary">Сброс</a>
                 </div>
             </form>
         </div>
     </div>
-
     <div class="card">
         <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="mb-4">
                 <h5 class="card-title mb-0">
-                    🧮 Всего страниц: {{ total_pages|intcomma }}
+                    Всего страниц: {{ total_pages|intcomma }}
                 </h5>
                 {% if start_date or end_date %}
                 <small class="text-muted">
-                    Период: 
+                    Период:
                     {% if start_date %}с {{ start_date }}{% endif %}
                     {% if end_date %} по {{ end_date }}{% endif %}
                 </small>
                 {% endif %}
             </div>
-
-            <div class="tree">
-                <ul class="ps-0">
+            <table class="table table-bordered table-sm align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Отдел / Принтер / Пользователь / Документ</th>
+                        <th class="text-end">Страниц</th>
+                        <th class="text-end">%</th>
+                        <th class="text-end">Дата</th>
+                    </tr>
+                </thead>
+                <tbody>
                 {% for dept_name, dept_data in tree.items %}
-                    <li>
-                        <div class="tree-item dept-item">
-                            <span class="toggle" data-bs-toggle="collapse" 
-                                  data-bs-target="#dept-{{ forloop.counter }}">
-                                <i class="fas fa-folder me-2"></i>
-                                <strong>{{ dept_name }}</strong>
-                                <span class="badge bg-primary ms-2">
-                                    {{ dept_data.total|intcomma }} стр.
-                                    ({{ dept_data.total|div:total_pages|mul:100|floatformat:1 }}%)
-                                </span>
-                            </span>
-                        </div>
-                        <ul id="dept-{{ forloop.counter }}" class="collapse show">
-                        {% for printer_name, printer_data in dept_data.printers.items %}
-                            <li>
-                                <div class="tree-item printer-item">
-                                    <span class="toggle" data-bs-toggle="collapse"
-                                          data-bs-target="#printer-{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
-                                        <i class="fas fa-print me-2"></i>
-                                        {{ printer_name }}
-                                        <span class="badge bg-success ms-2">
-                                            {{ printer_data.total|intcomma }} стр.
-                                            ({{ printer_data.total|div:dept_data.total|mul:100|floatformat:1 }}%)
-                                        </span>
-                                    </span>
-                                </div>
-                                <ul id="printer-{{ forloop.parentloop.counter }}-{{ forloop.counter }}" 
-                                    class="collapse">
-                                {% for user_name, user_data in printer_data.users.items %}
-                                    <li>
-                                        <div class="tree-item user-item">
-                                            <span class="toggle" data-bs-toggle="collapse"
-                                                  data-bs-target="#user-{{ forloop.parentloop.parentloop.counter }}-{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
-                                                <i class="fas fa-user me-2"></i>
-                                                {{ user_name }}
-                                                <span class="badge bg-info ms-2">
-                                                    {{ user_data.total|intcomma }} стр.
-                                                    ({{ user_data.total|div:printer_data.total|mul:100|floatformat:1 }}%)
-                                                </span>
-                                            </span>
-                                        </div>
-                                        <ul id="user-{{ forloop.parentloop.parentloop.counter }}-{{ forloop.parentloop.counter }}-{{ forloop.counter }}"
-                                            class="collapse">
-                                        {% for doc_name, entries in user_data.docs.items %}
-                                            {% for entry in entries %}
-                                            <li>
-                                                <div class="tree-item doc-item">
-                                                    <i class="fas fa-file-alt me-2"></i>
-                                                    <span class="document-entry">
-                                                        {{ doc_name }} — {{ entry.pages|intcomma }} стр.
-                                                        <small class="text-muted ms-2">
-                                                            {{ entry.timestamp|date:"d.m.Y H:i" }}
-                                                        </small>
-                                                    </span>
-                                                </div>
-                                            </li>
-                                            {% endfor %}
-                                        {% endfor %}
-                                        </ul>
-                                    </li>
+                    <tr class="fw-bold">
+                        <td>
+                            <a data-bs-toggle="collapse" href="#dept-{{ forloop.counter }}" role="button" aria-expanded="false" aria-controls="dept-{{ forloop.counter }}">
+                                {{ dept_name }}
+                            </a>
+                        </td>
+                        <td class="text-end">{{ dept_data.total|intcomma }}</td>
+                        <td class="text-end">{{ dept_data.percent }}</td>
+                        <td></td>
+                    </tr>
+                    <tr class="collapse" id="dept-{{ forloop.counter }}">
+                        <td colspan="4" class="p-0">
+                            <table class="table mb-0 table-sm align-middle">
+                                <tbody>
+                                {% for printer_name, printer_data in dept_data.printers.items %}
+                                    <tr class="fw-semibold">
+                                        <td class="ps-4">
+                                            <a data-bs-toggle="collapse" href="#printer-{{ forloop.parentloop.counter }}-{{ forloop.counter }}" role="button" aria-expanded="false" aria-controls="printer-{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
+                                                {{ printer_name }}
+                                            </a>
+                                        </td>
+                                        <td class="text-end">{{ printer_data.total|intcomma }}</td>
+                                        <td class="text-end">{{ printer_data.percent }}</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr class="collapse" id="printer-{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
+                                        <td colspan="4" class="p-0">
+                                            <table class="table mb-0 table-sm align-middle">
+                                                <tbody>
+                                                {% for user_name, user_data in printer_data.users.items %}
+                                                    <tr>
+                                                        <td class="ps-5">
+                                                            <a data-bs-toggle="collapse" href="#user-{{ forloop.parentloop.parentloop.counter }}-{{ forloop.parentloop.counter }}-{{ forloop.counter }}" role="button" aria-expanded="false" aria-controls="user-{{ forloop.parentloop.parentloop.counter }}-{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
+                                                                {{ user_name }}
+                                                            </a>
+                                                        </td>
+                                                        <td class="text-end">{{ user_data.total|intcomma }}</td>
+                                                        <td class="text-end">{{ user_data.percent }}</td>
+                                                        <td></td>
+                                                    </tr>
+                                                    <tr class="collapse" id="user-{{ forloop.parentloop.parentloop.counter }}-{{ forloop.parentloop.counter }}-{{ forloop.counter }}">
+                                                        <td colspan="4" class="p-0">
+                                                            <table class="table mb-0 table-sm align-middle">
+                                                                <tbody>
+                                                                {% for doc_name, entries in user_data.docs.items %}
+                                                                    {% for entry in entries %}
+                                                                    <tr>
+                                                                        <td class="ps-6">{{ doc_name }}</td>
+                                                                        <td class="text-end">{{ entry.pages|intcomma }}</td>
+                                                                        <td></td>
+                                                                        <td class="text-end">{{ entry.timestamp|date:"d.m.Y H:i" }}</td>
+                                                                    </tr>
+                                                                    {% endfor %}
+                                                                {% endfor %}
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
                                 {% endfor %}
-                                </ul>
-                            </li>
-                        {% endfor %}
-                        </ul>
-                    </li>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
                 {% endfor %}
-                </ul>
-            </div>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -171,35 +132,13 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Сохранение состояния раскрытия узлов в localStorage
-    const saveState = () => {
-        const state = {};
-        document.querySelectorAll('.collapse').forEach(el => {
-            state[el.id] = el.classList.contains('show');
-        });
-        localStorage.setItem('treeState', JSON.stringify(state));
-    };
-
-    // Восстановление состояния при загрузке
-    const savedState = localStorage.getItem('treeState');
-    if (savedState) {
-        const state = JSON.parse(savedState);
-        Object.entries(state).forEach(([id, isShown]) => {
-            const el = document.getElementById(id);
-            if (el) {
-                if (isShown) {
-                    el.classList.add('show');
-                } else {
-                    el.classList.remove('show');
-                }
-            }
-        });
-    }
-
-    // Сохранение состояния при изменении
-    document.querySelectorAll('.collapse').forEach(el => {
-        el.addEventListener('shown.bs.collapse', saveState);
-        el.addEventListener('hidden.bs.collapse', saveState);
+    // По умолчанию открываем только отделы, остальные уровни свернуты
+    document.querySelectorAll('.collapse').forEach(function(el) {
+        if (el.id.startsWith('dept-')) {
+            el.classList.add('show');
+        } else {
+            el.classList.remove('show');
+        }
     });
 });
 </script>

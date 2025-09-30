@@ -35,6 +35,10 @@ owner: "@rom"
 | PRINT_EVENTS_QUARANTINE_DIR | Карантин | `/app/data/quarantine`
 | IMPORT_TOKEN | Токен импорта (если нужен) | `change-me`
 | ENABLE_WINDOWS_AUTH | Backend Windows-авторизации | `0` (off)
+| WATCHER_MAX_RETRIES | Кол-во повторов обработки файла | `5` |
+| WATCHER_BACKOFF_BASE | База экспоненциальной задержки, сек | `2` |
+| WATCHER_BACKOFF_MAX | Максимальная задержка между повторами, сек | `30` |
+| WATCHER_DEADLINE_SECONDS | Дедлайн на обработку файла, сек | `300` |
 
 ## Безопасность (prod)
 

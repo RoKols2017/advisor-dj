@@ -50,6 +50,19 @@ make migrate
 make smoke
 ```
 
+## 🏭 Production Overlay
+
+- Конфиг: `docker-compose.prod.yml`
+- ENV: `.env.prod` (из шаблона `.env.prod.template`)
+
+Запуск прод-профиля:
+```bash
+docker compose -f docker-compose.prod.yml up -d
+docker compose exec web python manage.py migrate --noinput
+docker compose exec web python manage.py collectstatic --noinput
+./scripts/smoke.sh
+```
+
 ## 🔧 Makefile Commands
 
 ```bash

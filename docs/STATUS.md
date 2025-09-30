@@ -10,7 +10,7 @@ owner: "@rom"
 # Status
 
 - Current state:
-  - Stage 1 (Security & Settings) — базовые задачи выполнены; прод‑профиль к запуску (нужны финальные security настройки и `.env.prod`).
+  - Stage 1 (Security & Settings) — completed (prod‑профиль, `.env.prod.template`, security включены).
   - Stage 2 (Architecture & Performance) — выполнено по плану; остались доводки N+1/индексов и ретраев/карантина (задокументировано в рефакторинг‑плане).
   - Stage 3 (Tests & Code Quality) — 78% coverage, 51 тест; осталось поднять до ≥ 80% и покрыть watcher/backend.
   - Stage 4 (DevOps/CI/CD) — локальный Docker стек (web+watcher+db) green; CI собирает и тестирует; осталось prod‑overlay, деплой‑job и мониторинг.

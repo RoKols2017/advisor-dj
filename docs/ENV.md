@@ -43,4 +43,7 @@ owner: "@rom"
 | CSRF_TRUSTED_ORIGINS | Доверенные источники CSRF | `https://your-domain.com,https://www.your-domain.com`
 | SECURE_PROXY_SSL_HEADER | Заголовок прокси для HTTPS | `HTTP_X_FORWARDED_PROTO,https`
 
+### Prod шаблон
+- Файл: `.env.prod.template` — заполнить и сохранить как `.env.prod` на проде.
+
 

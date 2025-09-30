@@ -27,6 +27,13 @@ curl -f http://localhost:8000/health/
 ./scripts/smoke.sh
 ```
 
+### 3.1 Локальная проверка prod-профиля
+- Для проверки prod overlay локально добавьте `localhost` в `ALLOWED_HOSTS` в `.env.prod`.
+- Либо используйте заголовок Host при запросе health:
+```bash
+curl -H 'Host: printadvisor.local' -f http://localhost:8000/health/
+```
+
 ### 4. Доступ в админку
 ```bash
 docker compose exec -e DJANGO_SUPERUSER_PASSWORD='Strong!Pass' web \

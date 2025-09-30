@@ -5,19 +5,101 @@ services:
     image: postgres:15
     container_name: advisor-db
     environment:
-      POSTGRES_DB: advisor
-      POSTGRES_USER: advisor
-      POSTGRES_PASSWORD: advisor
+      POSTGRES_DB: ${POSTGRES_DB:-advisor}
+      POSTGRES_USER: ${POSTGRES_USER:-advisor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-advisor}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U advisor -d advisor"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-advisor} -d ${POSTGRES_DB:-advisor}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - advisor-network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: advisor-web
+    environment:
+      - DEBUG=${DEBUG:-0}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-config.settings.docker}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - DATABASE_URL=postgres://${POSTGRES_USER:-advisor}:${POSTGRES_PASSWORD:-advisor}@db:5432/${POSTGRES_DB:-advisor}
+      - LOG_TO_FILE=${LOG_TO_FILE:-1}
+      - LOG_TO_CONSOLE=${LOG_TO_CONSOLE:-0}
+      - LOG_DIR=${LOG_DIR:-/app/logs}
+      - LOG_FILE_NAME=${LOG_FILE_NAME:-project.log}
+      - IMPORT_TOKEN=${IMPORT_TOKEN}
+      - ENABLE_WINDOWS_AUTH=${ENABLE_WINDOWS_AUTH:-0}
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - advisor-network
+    restart: unless-stopped
+
+  watcher:
+    build:
+      context: .
+      dockerfile: Dockerfile.watcher
+    container_name: advisor-watcher
+    environment:
+      - DEBUG=${DEBUG:-0}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-config.settings.docker}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - DATABASE_URL=postgres://${POSTGRES_USER:-advisor}:${POSTGRES_PASSWORD:-advisor}@db:5432/${POSTGRES_DB:-advisor}
+      - LOG_TO_FILE=${LOG_TO_FILE:-1}
+      - LOG_TO_CONSOLE=${LOG_TO_CONSOLE:-0}
+      - LOG_DIR=${LOG_DIR:-/app/logs}
+      - WATCHER_LOG_FILE_NAME=${WATCHER_LOG_FILE_NAME:-print_events_watcher.log}
+      - PRINT_EVENTS_WATCH_DIR=${PRINT_EVENTS_WATCH_DIR:-/app/data/watch}
+      - PRINT_EVENTS_PROCESSED_DIR=${PRINT_EVENTS_PROCESSED_DIR:-/app/data/processed}
+      - PRINT_EVENTS_QUARANTINE_DIR=${PRINT_EVENTS_QUARANTINE_DIR:-/app/data/quarantine}
+      - ENABLE_WINDOWS_AUTH=${ENABLE_WINDOWS_AUTH:-0}
+    volumes:
+      - logs:/app/logs
+      - data:/app/data
+    depends_on:
+      web:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "printing.print_events_watcher"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - advisor-network
+    restart: unless-stopped
 
 volumes:
   pgdata:
+    driver: local
+  logs:
+    driver: local
+  data:
+    driver: local
 
+networks:
+  advisor-network:
+    driver: bridge

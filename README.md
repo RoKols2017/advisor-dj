@@ -37,10 +37,30 @@ python manage.py runserver 0.0.0.0:8000
 
 Откройте `http://127.0.0.1:8000` (админка: `/admin`).
 
-## 🏗️ Staging / Production
+## 🏗️ Docker / Production
 
-- Docker Compose: см. `docs/how-to/docker-deployment.md`
-- Production checklist: см. `docs/how-to/production-deployment.md`
+### Quick Start with Docker
+```bash
+# Клонировать и настроить
+git clone <repository-url>
+cd advisor-dj
+cp .env.example .env
+
+# Запустить весь стек
+make up-build
+# или
+docker compose up --build -d
+
+# Проверить статус
+make status
+make smoke
+```
+
+### Production Deployment
+- **Docker Compose**: полная документация в `docs/DEPLOY_PLAN.md`
+- **Health Checks**: автоматические проверки всех сервисов
+- **Monitoring**: логи, метрики, smoke-тесты
+- **CI/CD**: GitHub Actions с Docker образами
 
 ## 🧪 Тестирование
 
@@ -68,8 +88,17 @@ pytest -m "not slow" -q
 
 ## 🔄 CI/CD
 
-- CI: линтеры, тесты, сборка статики, сборка документации (`mkdocs build`)
-- Публикация артефактов: OpenAPI, диаграмма моделей
+### GitHub Actions Pipeline
+1. **Lint & Type Check**: ruff, black, mypy
+2. **Tests**: pytest с покрытием (SQLite + PostgreSQL) 
+3. **Security**: pip-audit проверка зависимостей
+4. **Docker Build**: образы web и watcher сервисов
+5. **Smoke Tests**: полный стек + health checks
+
+### Artifacts
+- **Docker Images**: `ghcr.io/owner/repo:tag-web`, `ghcr.io/owner/repo:tag-watcher`
+- **Coverage Reports**: XML + HTML
+- **Security Reports**: pip-audit JSON
 
 ## 📁 Структура проекта
 
@@ -79,13 +108,13 @@ accounts/   printing/   config/   templates/   static/   docs/   manage.py
 
 ## 📚 Документация
 
-- Статус и прогресс: `docs/STATUS.md`
-- План разработки: `docs/DEV_PLAN.md`
-- Руководство эксплуатации: `docs/RUNBOOK.md`
-- Архитектурные заметки: `docs/concepts/`
-- Справочник: `docs/reference/` (API, модели, UI)
-- How-to: `docs/how-to/`
-- Архив устаревших документов: `docs/archive/`
+- Статус проекта: [docs/STATUS.md](docs/STATUS.md)
+- План рефакторинга: [docs/REFACTOR_PLAN.md](docs/REFACTOR_PLAN.md)
+- План деплоя: [docs/DEPLOY_PLAN.md](docs/DEPLOY_PLAN.md)
+- Runbook (эксплуатация): [docs/RUNBOOK.md](docs/RUNBOOK.md)
+- Переменные окружения (ENV): [docs/ENV.md](docs/ENV.md)
+- How-to: Windows SMB шары → watcher: [docs/how-to/windows-share.md](docs/how-to/windows-share.md)
+- Дополнительно: [docs/DEV_PLAN.md](docs/DEV_PLAN.md), `docs/concepts/`, `docs/reference/`, `docs/how-to/`, `docs/archive/`
 
 ## 📞 Поддержка
 

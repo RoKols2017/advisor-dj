@@ -2,22 +2,26 @@
 title: "Project Status"
 type: project
 status: draft
-last_verified: "2025-09-29"
+last_verified: "2025-09-30"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
 
 # Status
 
-- Current state: Refactor Stage 3 completed (Tests & Code Quality)
+- Current state:
+  - Stage 1 (Security & Settings) — базовые задачи выполнены; прод‑профиль к запуску (нужны финальные security настройки и `.env.prod`).
+  - Stage 2 (Architecture & Performance) — выполнено по плану; остались доводки N+1/индексов и ретраев/карантина (задокументировано в рефакторинг‑плане).
+  - Stage 3 (Tests & Code Quality) — 78% coverage, 51 тест; осталось поднять до ≥ 80% и покрыть watcher/backend.
+  - Stage 4 (DevOps/CI/CD) — локальный Docker стек (web+watcher+db) green; CI собирает и тестирует; осталось prod‑overlay, деплой‑job и мониторинг.
 - Quality metrics:
-  - Test coverage: 78% (target: 80% overall, 85% for changed files) ✅
+  - Test coverage: 78% (target: 80% overall, 85% for changed files)
   - Tests: 51 tests passing (100% success rate)
-  - Static analysis: ruff, black, mypy configured ✅
-  - CI/CD: GitHub Actions with lint/test/coverage ✅
+  - Static analysis: ruff, black, mypy — configured
+  - CI/CD: Lint/Test/Coverage + Docker build + smoke
 - Risks:
-  - Postgres/Compose ещё не интегрирован для web/watcher сервисов (только db) — medium
-  - DRF/OpenAPI отсутствует — medium
+  - Отсутствуют DRF/OpenAPI — medium
+  - Прод‑оверлей (reverse proxy/TLS) в работе — medium
 - Bugs:
-  - Нет
+  - Нет известных
 

@@ -1,54 +1,199 @@
 ---
 title: "Deploy Plan (Print Advisor)"
 type: guide
-status: draft
-last_verified: "2025-09-29"
+status: completed
+last_verified: "2025-09-30"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
 
-## Сервисы
+## 🐳 Docker Services
 
-- web: Django + gunicorn + WhiteNoise
-- watcher: `python -m printing.print_events_watcher`
-- db: Postgres 15
+### Сервисы
+- **web**: Django + gunicorn + WhiteNoise (порт 8000)
+- **watcher**: python -m printing.print_events_watcher (демон)
+- **db**: PostgreSQL 15 (порт 5432)
 
-## Переменные окружения (.env.example)
+### Volumes
+- `pgdata`: данные PostgreSQL
+- `logs`: логи приложения
+- `data`: файлы для обработки (watch/, processed/, quarantine/)
 
+### Networks
+- `advisor-network`: внутренняя сеть для сервисов
+
+## 🚀 Quick Start
+
+```bash
+# Клонировать репозиторий
+git clone <repository-url>
+cd advisor-dj
+
+# Настроить окружение
+cp .env.example .env
+# Отредактировать .env с вашими настройками
+
+# Запустить стек
+make up-build
+# или
+docker compose up --build -d
+
+# Проверить статус
+make status
+# или
+docker compose ps
+
+# Запустить миграции
+make migrate
+
+# Проверить здоровье
+make smoke
+```
+
+## 🔧 Makefile Commands
+
+```bash
+make help          # Показать все команды
+make build         # Собрать образы
+make up            # Запустить сервисы
+make up-build      # Запустить с пересборкой
+make down          # Остановить сервисы
+make logs          # Показать логи всех сервисов
+make logs-web      # Логи web-сервиса
+make logs-watcher  # Логи watcher-сервиса
+make logs-db       # Логи базы данных
+make smoke         # Запустить smoke-тесты
+make migrate       # Выполнить миграции
+make collectstatic # Собрать статические файлы
+make shell         # Django shell
+make test          # Запустить тесты
+make lint          # Проверка кода
+make clean         # Очистка контейнеров и volumes
+make restart       # Перезапуск сервисов
+make status        # Статус сервисов
+make health        # Проверка здоровья
+```
+
+## 🏥 Health Checks
+
+### Web Service
+- **URL**: `http://localhost:8000/health/`
+- **Check**: HTTP 200 с JSON статусом
+- **Interval**: 30s, timeout: 10s, retries: 3
+
+### Watcher Service
+- **Check**: процесс `printing.print_events_watcher` запущен
+- **Interval**: 30s, timeout: 10s, retries: 3
+
+### Database Service
+- **Check**: `pg_isready -U advisor -d advisor`
+- **Interval**: 10s, timeout: 5s, retries: 5
+
+## 🔒 Environment Variables
+
+### Required
+```env
+SECRET_KEY=your-secret-key
+DATABASE_URL=postgres://user:pass@db:5432/dbname
+POSTGRES_PASSWORD=secure-password
+```
+
+### Optional
 ```env
 DEBUG=0
-SECRET_KEY=change-me
-ALLOWED_HOSTS=example.com
-DATABASE_URL=postgres://user:pass@db:5432/advisor
+ALLOWED_HOSTS=localhost,example.com
 LOG_TO_FILE=1
 LOG_TO_CONSOLE=0
-LOG_DIR=/app/logs
-PRINT_EVENTS_WATCH_DIR=/app/data/watch
-PRINT_EVENTS_PROCESSED_DIR=/app/data/processed
+IMPORT_TOKEN=your-import-token
 ENABLE_WINDOWS_AUTH=0
 ```
 
-## Процедура деплоя
+## 📊 Monitoring
 
+### Logs
 ```bash
-docker compose build --no-cache
-docker compose up -d db
-sleep 5
-docker compose up -d web watcher
-docker compose exec web python manage.py migrate --noinput
-docker compose exec web python manage.py collectstatic --noinput
-docker compose ps
+# Все сервисы
+docker compose logs -f
+
+# Конкретный сервис
+docker compose logs -f web
+docker compose logs -f watcher
+docker compose logs -f db
+
+# Последние 100 строк
+docker compose logs --tail=100 web
 ```
 
-## Чеклист валидации продакшна
+### Health Status
+```bash
+# Проверка здоровья
+curl http://localhost:8000/health/
 
-- `python manage.py check --deploy` без ошибок
-- Security headers: HSTS, X-Content-Type-Options, X-Frame-Options
-- Статика раздаётся WhiteNoise, без 404
-- Логи пишутся в volume `logs/`
-- Watcher видит `watch` каталог и перемещает файлы в `processed`
+# Статус контейнеров
+docker compose ps
 
-## Rollback
+# Использование ресурсов
+docker stats
+```
 
-- Откатить на предыдущий образ; выполнить миграции в обратимом режиме при необходимости.
+## 🔄 CI/CD Pipeline
 
+### GitHub Actions
+1. **Lint & Type Check**: ruff, black, mypy
+2. **Tests**: pytest с покрытием (SQLite + PostgreSQL)
+3. **Security**: pip-audit проверка зависимостей
+4. **Build**: Docker образы (web, watcher)
+5. **Smoke Tests**: полный стек + health checks
+
+### Artifacts
+- Docker images: `ghcr.io/owner/repo:tag-web`, `ghcr.io/owner/repo:tag-watcher`
+- Coverage reports: XML + HTML
+- Security reports: pip-audit JSON
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+#### Services not starting
+```bash
+# Проверить логи
+docker compose logs
+
+# Проверить конфигурацию
+docker compose config
+
+# Пересобрать образы
+docker compose build --no-cache
+```
+
+#### Database connection issues
+```bash
+# Проверить статус БД
+docker compose exec db pg_isready -U advisor
+
+# Проверить переменные окружения
+docker compose exec web env | grep DATABASE
+```
+
+#### Health check failures
+```bash
+# Проверить health endpoint
+curl -v http://localhost:8000/health/
+
+# Проверить процессы в контейнерах
+docker compose exec web ps aux
+docker compose exec watcher ps aux
+```
+
+### Recovery Commands
+```bash
+# Полная перезагрузка
+make clean
+make up-build
+
+# Только перезапуск сервиса
+docker compose restart web
+
+# Проверка после изменений
+make smoke
+```

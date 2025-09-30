@@ -1,6 +1,6 @@
-from flask import Blueprint, request, jsonify
-from app.utils.import_users import import_users_from_csv
 from app.utils.import_print_events import import_print_events_from_json
+from app.utils.import_users import import_users_from_csv
+from flask import Blueprint, jsonify, request
 
 importer = Blueprint("importer", __name__)
 

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import io
-import json
+
 from django.test import TestCase
 from django.utils import timezone
 
 from accounts.models import User
 from printing.models import Department, PrintEvent
-from printing.services import import_users_from_csv_stream, import_print_events
+from printing.services import import_print_events, import_users_from_csv_stream
 
 
 class ImportUsersServiceTests(TestCase):

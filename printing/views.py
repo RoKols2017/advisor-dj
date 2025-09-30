@@ -1,27 +1,29 @@
-from django.shortcuts import render
-from django.views.generic import TemplateView, ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django_tables2 import SingleTableMixin
-from django_filters.views import FilterView
-from django.db.models import Count, Sum, Max, F
-from django.db.models.functions import TruncDate, Coalesce
-from .models import PrintEvent, Department, Printer, PrinterModel
-from accounts.models import User  # Исправленный импорт
-from .tables import PrintEventTable
-from .filters import PrintEventFilter
-from django.utils import timezone
-from collections import OrderedDict
-from datetime import datetime, timedelta
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
-from django.core.cache import cache
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from django.views import View
-from .importers import import_users_from_csv, import_print_events_from_json
-from django.contrib.auth.decorators import login_required
 import json
+from collections import OrderedDict
+from datetime import datetime
+
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
+from django.db.models import Count, Max, Sum
+from django.db.models.functions import TruncDate
+from django.shortcuts import render
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.views.decorators.cache import cache_page
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import ListView, TemplateView
+from django_filters.views import FilterView
+from django_tables2 import SingleTableMixin
+
+from accounts.models import User  # Исправленный импорт
+
+from .filters import PrintEventFilter
+from .importers import import_print_events_from_json, import_users_from_csv
+from .models import Department, PrintEvent
+from .tables import PrintEventTable
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -73,7 +75,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
         department_cache_key = 'department_stats_top'
         department_stats = cache.get(department_cache_key)
         if department_stats is None:
-            department_stats = Department.objects.prefetch_related("user_set").annotate(
+            department_stats = Department.objects.annotate(
                 total_pages=Sum('users__print_events__pages'),
                 total_documents=Count('users__print_events'),
                 total_size=Sum('users__print_events__byte_size')
@@ -245,7 +247,6 @@ class ImportPrintEventsView(LoginRequiredMixin, View):
         return render(request, 'printing/import_print_events_result.html', {'result': None})
 
     def post(self, request):
-        import json
         events = None
         error = None
         # Если multipart/form-data — файл

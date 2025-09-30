@@ -1,8 +1,10 @@
 import csv
 import logging
+
 from sqlalchemy import func
-from app.models import User, Department
+
 from app.extensions import db
+from app.models import Department, User
 
 logger = logging.getLogger("import_users_logger")
 logger.setLevel(logging.INFO)

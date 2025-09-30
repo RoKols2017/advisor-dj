@@ -1,10 +1,10 @@
-import os
-import time
 import glob
 import logging
+import os
+import time
 
-from app.utils.import_users import import_users_from_csv
 from app.utils.import_print_events import import_print_events_from_json
+from app.utils.import_users import import_users_from_csv
 
 IMPORT_DIR = './import_dir'
 SLEEP_TIME = 10  # seconds
@@ -38,7 +38,7 @@ def process_print_events():
     for json_file in json_files:
         logger.info(f"🖨️ Найден файл событий: {os.path.basename(json_file)}")
         try:
-            with open(json_file, 'r', encoding='utf-8') as f:
+            with open(json_file, encoding='utf-8') as f:
                 import json
                 events = json.load(f)
             result = import_print_events_from_json(events)

@@ -2,24 +2,27 @@ from __future__ import annotations
 
 import csv
 import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 from dataclasses import dataclass
-from io import TextIOWrapper
-from typing import Iterable, Tuple, Dict, Any, Optional
+from typing import Any
 
 from django.db import transaction
 from django.utils import timezone
 
 from accounts.models import User
+
 from .models import (
-    Department,
-    PrintEvent,
-    Printer,
-    PrinterModel,
     Building,
     Computer,
+    Department,
     Port,
+    Printer,
+    PrinterModel,
+    PrintEvent,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +94,7 @@ class ImportUsersResult:
     errors: list[str]
 
 
-def import_users_from_csv_stream(file_bytes) -> Dict[str, Any]:
+def import_users_from_csv_stream(file_bytes) -> dict[str, Any]:
     created = 0
     errors: list[str] = []
     try:
@@ -127,7 +130,7 @@ def import_users_from_csv_stream(file_bytes) -> Dict[str, Any]:
     return {"created": created, "errors": errors}
 
 
-def import_print_events(events: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
+def import_print_events(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
     created = 0
     errors: list[str] = []
     for event in events:
@@ -177,14 +180,14 @@ def import_print_events(events: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
                     errors.append(f"User not found: {username}")
                     continue
 
-                computer: Optional[Computer] = None
+                computer: Computer | None = None
                 computer_name = (event.get("Param4") or "").strip().lower()
                 if computer_name:
                     computer = Computer.objects.filter(name__iexact=computer_name).first()
                     if not computer:
                         computer = Computer.objects.create(name=computer_name)
 
-                port: Optional[Port] = None
+                port: Port | None = None
                 port_name = (event.get("Param6") or "").strip().lower()
                 if port_name:
                     port = Port.objects.filter(name__iexact=port_name).first()

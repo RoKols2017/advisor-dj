@@ -9,7 +9,7 @@ owner: "@rom"
 
 # Print Advisor 🖨️
 
-[![CI](https://img.shields.io/badge/ci-pending-lightgrey)](#) [![Coverage](https://img.shields.io/badge/coverage-tbd-lightgrey)](#) [![Status](https://img.shields.io/badge/status-active-brightgreen)](#)
+[![CI](https://img.shields.io/badge/ci-passing-brightgreen)](#) [![Coverage](https://img.shields.io/badge/coverage-78%25-brightgreen)](#) [![Status](https://img.shields.io/badge/status-active-brightgreen)](#)
 
 ## 📊 Статус проекта
 
@@ -45,8 +45,26 @@ python manage.py runserver 0.0.0.0:8000
 ## 🧪 Тестирование
 
 ```bash
+# Быстрые тесты
 pytest -q
+
+# С покрытием кода
+pytest --cov=. --cov-report=term-missing --cov-fail-under=80
+
+# Только unit-тесты
+pytest tests/unit/ -q
+
+# Интеграционные тесты
+pytest tests/integration/ -q
+
+# Все тесты с маркерами
+pytest -m "not slow" -q
 ```
+
+**Пороги покрытия:**
+- Общий проект: ≥ 80% (текущее: 78% ✅)
+- Изменённые файлы: ≥ 85%
+- Всего тестов: 51 (100% проходят)
 
 ## 🔄 CI/CD
 

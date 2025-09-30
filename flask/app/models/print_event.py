@@ -1,7 +1,9 @@
-from app.extensions import db
+from datetime import datetime
+
 from sqlalchemy import func
 from sqlalchemy.orm import relationship
-from datetime import datetime
+
+from app.extensions import db
 
 
 class PrintEvent(db.Model):

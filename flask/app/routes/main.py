@@ -1,10 +1,12 @@
-from collections import OrderedDict
-from flask import Blueprint, render_template, request, send_file
 import io
-import xlsxwriter
-from app.extensions import db
-from app.models import PrintEvent, User, Printer, Department, PrinterModel
+from collections import OrderedDict
 from datetime import datetime
+
+import xlsxwriter
+
+from app.extensions import db
+from app.models import Department, Printer, PrinterModel, PrintEvent, User
+from flask import Blueprint, render_template, request, send_file
 
 main_blueprint = Blueprint("main", __name__)
 
@@ -70,9 +72,11 @@ def print_events():
 
 @main_blueprint.route("/print-tree")
 def print_tree():
-    from sqlalchemy import func
-    from app.models import PrintEvent, Department, Printer, PrinterModel, User
     from datetime import datetime
+
+    from sqlalchemy import func
+
+    from app.models import Department, Printer, PrintEvent, User
 
     start_date_str = request.args.get("start_date", "").strip()
     end_date_str = request.args.get("end_date", "").strip()
@@ -215,9 +219,9 @@ def export_tree_excel():
     # Для простоты, здесь можно использовать текущий `print_tree()` как отдельную функцию,
     # или собрать аналогичный список событий
 
-    from app.models import PrintEvent, Department, Printer, PrinterModel, User
     from datetime import datetime
-    from sqlalchemy import func
+
+    from app.models import Department, Printer, PrintEvent, User
 
     start_date_str = request.args.get("start_date", "").strip()
     end_date_str = request.args.get("end_date", "").strip()

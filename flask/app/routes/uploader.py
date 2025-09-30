@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from app.utils.import_users import import_users_from_csv
-from app.utils.import_print_events import import_print_events_from_json
 import json
+
+from app.utils.import_print_events import import_print_events_from_json
+from app.utils.import_users import import_users_from_csv
+from flask import Blueprint, flash, redirect, render_template, request
 
 uploader = Blueprint("uploader", __name__)
 

@@ -16,16 +16,17 @@
     - LOG_TO_FILE, LOG_TO_CONSOLE для управления каналами логирования
 """
 
-import os
-import time
-import shutil
-import sys
-import django
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-from dotenv import load_dotenv
 import logging
 import logging.config
+import os
+import shutil
+import sys
+import time
+
+import django
+from dotenv import load_dotenv
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 # Удалить все существующие хендлеры у root-логгера (важно для отключения консоли)
 for handler in logging.root.handlers[:]:
@@ -74,7 +75,7 @@ class PrintEventHandler(FileSystemEventHandler):
             for attempt in range(5):
                 try:
                     # Чтение и импорт событий печати
-                    with open(fname, 'r', encoding='utf-8-sig') as f:
+                    with open(fname, encoding='utf-8-sig') as f:
                         import json
                         events = json.load(f)
                     result = import_print_events_from_json(events)

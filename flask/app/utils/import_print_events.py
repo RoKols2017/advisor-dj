@@ -1,11 +1,10 @@
 import logging
 from datetime import datetime
+
 from sqlalchemy import func
+
 from app.extensions import db
-from app.models import (
-    User, Printer, PrinterModel, Building, Department,
-    PrintEvent, Computer, Port
-)
+from app.models import Building, Computer, Department, Port, Printer, PrinterModel, PrintEvent, User
 
 logger = logging.getLogger("import_events")
 logger.setLevel(logging.INFO)

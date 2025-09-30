@@ -1,5 +1,5 @@
-from flask import Blueprint, request, jsonify
 from app.utils.import_print_events import import_print_events_from_json
+from flask import Blueprint, jsonify, request
 
 importer = Blueprint("importer", __name__)
 

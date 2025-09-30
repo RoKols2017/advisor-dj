@@ -1,5 +1,3 @@
-import logging
-import logging.config
 import os
 
 LOG_DIR = os.getenv('LOG_DIR', './logs')

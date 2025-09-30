@@ -1,7 +1,9 @@
+from django.core.cache import cache
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.core.cache import cache
+
 from .models import PrintEvent
+
 
 @receiver(post_save, sender=PrintEvent)
 def update_statistics(sender, instance, created, **kwargs):

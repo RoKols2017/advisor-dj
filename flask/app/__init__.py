@@ -1,11 +1,15 @@
-from flask import Flask
-from flasgger import Swagger
 import secrets
+
+from flasgger import Swagger
+
+from flask import Flask
+
 from .config import Config
 from .extensions import db
 from .models import *  # подтягивает все модели
 from .routes import main_blueprint
 from .routes.uploader import uploader
+
 
 def create_app():
     app = Flask(__name__)

@@ -1,7 +1,9 @@
-from import_export import resources, fields
+from import_export import fields, resources
 from import_export.widgets import ForeignKeyWidget
-from .models import Building, PrinterModel, Department, Computer, Port, Printer, PrintEvent
+
 from accounts.models import User
+
+from .models import Building, Computer, Department, Port, Printer, PrinterModel, PrintEvent
 
 
 class BuildingResource(resources.ModelResource):

@@ -1,6 +1,7 @@
 import django_filters
 from django import forms
-from .models import PrintEvent, Department, Printer, Computer
+
+from .models import Computer, Department, Printer, PrintEvent
 
 
 class PrintEventFilter(django_filters.FilterSet):

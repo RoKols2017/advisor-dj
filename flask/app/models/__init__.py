@@ -1,9 +1,9 @@
 # Импорт моделей для регистрации
 from .building import Building
-from .department import Department
-from .printer_model import PrinterModel
-from .printer import Printer
-from .user import User
-from .print_event import PrintEvent
 from .computer import Computer
+from .department import Department
 from .port import Port
+from .print_event import PrintEvent
+from .printer import Printer
+from .printer_model import PrinterModel
+from .user import User

@@ -1,7 +1,13 @@
-from django import forms
-from io import TextIOWrapper
 import csv
-from .models import Department, User
+from io import TextIOWrapper
+
+from django import forms
+
+from .models import Department
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 
 class UserImportForm(forms.Form):
     """

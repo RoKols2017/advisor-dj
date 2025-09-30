@@ -1,10 +1,13 @@
+from decimal import Decimal
+
 from django.test import TestCase
 from django.utils import timezone
-from decimal import Decimal
-from printing.models import PrintEvent, Department, Printer
-from printing.models.printer import PrinterModel
-from printing.models.building import Building
+
 from accounts.models import User
+from printing.models import Department, Printer, PrintEvent
+from printing.models.building import Building
+from printing.models.printer import PrinterModel
+
 
 class PrintEventTests(TestCase):
     """

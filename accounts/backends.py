@@ -1,7 +1,7 @@
-from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth import get_user_model
-import win32security
 import pywintypes
+import win32security
+from django.contrib.auth import get_user_model
+from django.contrib.auth.backends import ModelBackend
 
 User = get_user_model()
 

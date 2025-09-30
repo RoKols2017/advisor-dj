@@ -1,9 +1,15 @@
 from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
-from .models import Department, Computer, Port, Printer, PrintEvent, Building, PrinterModel
+
+from .models import Building, Computer, Department, Port, Printer, PrinterModel, PrintEvent
 from .resources import (
-    BuildingResource, PrinterModelResource, DepartmentResource,
-    ComputerResource, PortResource, PrinterResource, PrintEventResource
+    BuildingResource,
+    ComputerResource,
+    DepartmentResource,
+    PortResource,
+    PrinterModelResource,
+    PrinterResource,
+    PrintEventResource,
 )
 
 

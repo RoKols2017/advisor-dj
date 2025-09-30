@@ -1,5 +1,6 @@
 from flasgger.utils import swag_from
 
+
 @importer.route("/import/users", methods=["POST"])
 @swag_from({
     'tags': ['Import'],

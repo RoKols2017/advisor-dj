@@ -1,6 +1,7 @@
-from app.extensions import db
 from sqlalchemy import func
 from sqlalchemy.orm import relationship
+
+from app.extensions import db
 
 
 class Department(db.Model):

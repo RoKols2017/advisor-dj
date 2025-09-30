@@ -1,6 +1,57 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
+
+from django.db import transaction
+
+from .models import User
+from printing.models.department import Department
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class EnsureUserResult:
+    user: User
+    created: bool
+
+
+@transaction.atomic
+def ensure_user(username: str, fio: str | None, department_code: str) -> EnsureUserResult:
+    """Создаёт/обновляет пользователя и его отдел по коду (case-insensitive).
+
+    Args:
+        username: логин пользователя (обязателен)
+        fio: ФИО (опционально)
+        department_code: код отдела (обязателен)
+
+    Returns:
+        EnsureUserResult с пользователем и флагом создания
+    """
+    if not username:
+        raise ValueError("username is required")
+    code = (department_code or "").strip().lower()
+    if not code:
+        raise ValueError("department_code is required")
+
+    dept = Department.objects.filter(code__iexact=code).first()
+    if not dept:
+        dept = Department.objects.create(code=code, name=code.upper())
+
+    user, created = User.objects.update_or_create(
+        username=username.strip().lower(),
+        defaults={
+            "fio": fio or username,
+            "department": dept,
+            "is_active": True,
+        },
+    )
+    return EnsureUserResult(user=user, created=created)
+
+from __future__ import annotations
+
+import logging
 from typing import Optional, Tuple
 
 from django.contrib.auth import get_user_model

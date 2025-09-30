@@ -22,6 +22,8 @@ import os
 import shutil
 import sys
 import time
+import hashlib
+from datetime import datetime, timedelta
 
 import django
 from dotenv import load_dotenv
@@ -42,6 +44,12 @@ QUARANTINE_DIR = os.getenv('PRINT_EVENTS_QUARANTINE_DIR', './quarantine_dir')
 
 WATCH_DIR = os.getenv('PRINT_EVENTS_WATCH_DIR', './watch_dir')
 PROCESSED_DIR = os.getenv('PRINT_EVENTS_PROCESSED_DIR', './processed_dir')
+
+# Политика повторов/дедлайнов (регулируется через ENV)
+MAX_RETRIES = int(os.getenv('WATCHER_MAX_RETRIES', '5'))
+BACKOFF_BASE = float(os.getenv('WATCHER_BACKOFF_BASE', '2'))  # секунд
+BACKOFF_MAX = float(os.getenv('WATCHER_BACKOFF_MAX', '30'))   # секунд
+DEADLINE_SECONDS = int(os.getenv('WATCHER_DEADLINE_SECONDS', '300'))
 
 # --- Django setup ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -72,7 +80,8 @@ class PrintEventHandler(FileSystemEventHandler):
         # Импорт событий печати из JSON
         if ext == '.json':
             logger.info(f'Найден файл: {fname}')
-            for attempt in range(5):
+            started_at = datetime.utcnow()
+            for attempt in range(MAX_RETRIES):
                 try:
                     # Чтение и импорт событий печати
                     with open(fname, encoding='utf-8-sig') as f:
@@ -86,15 +95,31 @@ class PrintEventHandler(FileSystemEventHandler):
                     logger.info(f'Файл перемещён в {dest}')
                     break
                 except PermissionError as e:
-                    logger.warning(f'Permission denied for {fname} (попытка {attempt+1}/5): {e}')
-                    time.sleep(2 * (attempt + 1))
+                    delay = min(BACKOFF_BASE * (attempt + 1), BACKOFF_MAX)
+                    logger.warning(f'Permission denied for {fname} (попытка {attempt+1}/{MAX_RETRIES}): {e}; sleep {delay}s')
+                    time.sleep(delay)
                 except Exception as e:
-                    logger.error(f'Ошибка при обработке {fname} (попытка {attempt+1}/5): {e}', exc_info=True)
-                    time.sleep(2 * (attempt + 1))
+                    delay = min(BACKOFF_BASE * (attempt + 1), BACKOFF_MAX)
+                    logger.error(f'Ошибка при обработке {fname} (попытка {attempt+1}/{MAX_RETRIES}): {e}', exc_info=True)
+                    time.sleep(delay)
+                # дедлайн
+                if (datetime.utcnow() - started_at) > timedelta(seconds=DEADLINE_SECONDS):
+                    logger.error(f'Дедлайн истёк для {fname} — прекращаю повторы')
+                    break
             else:
                 try:
                     os.makedirs(QUARANTINE_DIR, exist_ok=True)
-                    dest = os.path.join(QUARANTINE_DIR, os.path.basename(fname))
+                    # Имя: {timestamp}-{hash}-{reason}.ext
+                    ts = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+                    try:
+                        with open(fname, 'rb') as rf:
+                            digest = hashlib.sha256(rf.read()).hexdigest()[:12]
+                    except Exception:
+                        digest = 'nohash'
+                    ext = os.path.splitext(fname)[1].lower()
+                    reason = 'import_error'
+                    quarantine_name = f'{ts}-{digest}-{reason}{ext}'
+                    dest = os.path.join(QUARANTINE_DIR, quarantine_name)
                     shutil.move(fname, dest)
                     logger.error(f'Файл перемещён в quarantine: {dest}')
                 except Exception as qe:
@@ -102,7 +127,8 @@ class PrintEventHandler(FileSystemEventHandler):
         # Импорт пользователей AD из CSV
         elif ext == '.csv':
             logger.info(f'Найден CSV-файл пользователей: {fname}')
-            for attempt in range(5):
+            started_at = datetime.utcnow()
+            for attempt in range(MAX_RETRIES):
                 try:
                     # Чтение и импорт пользователей
                     with open(fname, 'rb') as f:
@@ -114,15 +140,29 @@ class PrintEventHandler(FileSystemEventHandler):
                     logger.info(f'CSV-файл перемещён в {dest}')
                     break
                 except PermissionError as e:
-                    logger.warning(f'Permission denied for {fname} (попытка {attempt+1}/5): {e}')
-                    time.sleep(2 * (attempt + 1))
+                    delay = min(BACKOFF_BASE * (attempt + 1), BACKOFF_MAX)
+                    logger.warning(f'Permission denied for {fname} (попытка {attempt+1}/{MAX_RETRIES}): {e}; sleep {delay}s')
+                    time.sleep(delay)
                 except Exception as e:
-                    logger.error(f'Ошибка при обработке CSV {fname} (попытка {attempt+1}/5): {e}', exc_info=True)
-                    time.sleep(2 * (attempt + 1))
+                    delay = min(BACKOFF_BASE * (attempt + 1), BACKOFF_MAX)
+                    logger.error(f'Ошибка при обработке CSV {fname} (попытка {attempt+1}/{MAX_RETRIES}): {e}', exc_info=True)
+                    time.sleep(delay)
+                if (datetime.utcnow() - started_at) > timedelta(seconds=DEADLINE_SECONDS):
+                    logger.error(f'Дедлайн истёк для {fname} — прекращаю повторы')
+                    break
             else:
                 try:
                     os.makedirs(QUARANTINE_DIR, exist_ok=True)
-                    dest = os.path.join(QUARANTINE_DIR, os.path.basename(fname))
+                    ts = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+                    try:
+                        with open(fname, 'rb') as rf:
+                            digest = hashlib.sha256(rf.read()).hexdigest()[:12]
+                    except Exception:
+                        digest = 'nohash'
+                    ext = os.path.splitext(fname)[1].lower()
+                    reason = 'csv_import_error'
+                    quarantine_name = f'{ts}-{digest}-{reason}{ext}'
+                    dest = os.path.join(QUARANTINE_DIR, quarantine_name)
                     shutil.move(fname, dest)
                     logger.error(f'CSV-файл перемещён в quarantine: {dest}')
                 except Exception as qe:

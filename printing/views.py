@@ -5,9 +5,7 @@ from datetime import datetime
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.cache import cache
 from django.db.models import Count, Max, Sum
-from django.db.models.functions import TruncDate
 from django.shortcuts import render
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -21,8 +19,9 @@ from django_tables2 import SingleTableMixin
 from accounts.models import User  # Исправленный импорт
 
 from .filters import PrintEventFilter
-from .importers import import_print_events_from_json, import_users_from_csv
+from .services import import_print_events, import_users_from_csv_stream
 from .models import Department, PrintEvent
+from . import services as svc
 from .tables import PrintEventTable
 
 
@@ -32,21 +31,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Статистика за последние 30 дней
-        last_30_days = PrintEvent.objects.select_related('user', 'printer').filter(
-            timestamp__gte=timezone.now() - timezone.timedelta(days=30)
-        )
-        
-        context.update({
-            'total_pages': last_30_days.aggregate(Sum('pages'))['pages__sum'] or 0,
-            'total_documents': last_30_days.count(),
-            'daily_stats': last_30_days.annotate(
-                date=TruncDate('timestamp')
-            ).values('date').annotate(
-                pages=Sum('pages'),
-                documents=Count('id')
-            ).order_by('date'),
-        })
+        stats = svc.get_dashboard_stats(days=30)
+        context.update(stats)
         return context
 
 
@@ -71,31 +57,10 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Статистика по отделам (кэшируем агрегаты)
-        department_cache_key = 'department_stats_top'
-        department_stats = cache.get(department_cache_key)
-        if department_stats is None:
-            department_stats = Department.objects.annotate(
-                total_pages=Sum('users__print_events__pages'),
-                total_documents=Count('users__print_events'),
-                total_size=Sum('users__print_events__byte_size')
-            ).order_by('-total_pages')
-            cache.set(department_cache_key, department_stats, 300)
-
-        # Статистика по пользователям (кэшируем топ-10)
-        user_cache_key = 'user_stats_top10'
-        user_stats = cache.get(user_cache_key)
-        if user_stats is None:
-            user_stats = User.objects.select_related('department').annotate(
-                total_pages=Sum('print_events__pages'),
-                total_documents=Count('print_events'),
-                total_size=Sum('print_events__byte_size')
-            ).order_by('-total_pages')[:10]
-            cache.set(user_cache_key, list(user_stats), 300)
-
+        data = svc.get_statistics_data(None, None)
         context.update({
-            'department_stats': department_stats,
-            'user_stats': user_stats,
+            'department_stats': data['department_stats'],
+            'user_stats': data['user_stats'],
         })
         return context
 
@@ -133,18 +98,7 @@ class PrintTreeView(TemplateView):
         cache_key = f'print_tree_{start_date}_{end_date}'
         tree_data = cache.get(cache_key)
         if tree_data is None:
-            results = query.values(
-                'printer__department__code',
-                'printer__department__name',
-                'printer__model__code',
-                'printer__room_number',
-                'printer__printer_index',
-                'user__fio',
-                'document_name'
-            ).annotate(
-                page_sum=Sum('pages'),
-                last_time=Max('timestamp')
-            ).order_by('-page_sum')
+            results = svc.get_statistics_data(start_date=None, end_date=None)['tree_results']
             tree = {}
             total_pages = 0
             for row in results:
@@ -237,7 +191,7 @@ class ImportUsersView(LoginRequiredMixin, View):
             return render(request, 'printing/import_users_result.html', {
                 'result': {'error': 'Неверный формат файла. Ожидается CSV'}
             })
-        result = import_users_from_csv(file)
+        result = import_users_from_csv_stream(file)
         return render(request, 'printing/import_users_result.html', {'result': result})
 
 
@@ -265,7 +219,7 @@ class ImportPrintEventsView(LoginRequiredMixin, View):
             return render(request, 'printing/import_print_events_result.html', {'result': {'error': error}})
         if not isinstance(events, list):
             return render(request, 'printing/import_print_events_result.html', {'result': {'error': 'Неверный формат. Ожидается список событий'}})
-        result = import_print_events_from_json(events)
+        result = import_print_events(events)
         return render(request, 'printing/import_print_events_result.html', {'result': result})
 
 

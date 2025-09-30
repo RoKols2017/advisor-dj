@@ -11,6 +11,9 @@ from typing import Any
 
 from django.db import transaction
 from django.utils import timezone
+from django.core.cache import cache
+from django.db.models import Sum, Count, Max
+from django.db.models.functions import TruncDate
 
 from accounts.models import User
 
@@ -212,5 +215,93 @@ def import_print_events(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
             logger.error(msg)
             errors.append(msg)
     return {"created": created, "errors": errors}
+
+
+# -------------------- Query/Stats services --------------------
+
+def get_dashboard_stats(days: int = 30) -> dict[str, Any]:
+    from .models import PrintEvent  # local import to avoid cycles at load time
+
+    since = timezone.now() - timezone.timedelta(days=days)
+    qs = PrintEvent.objects.select_related("user", "printer").filter(timestamp__gte=since)
+    total_pages = qs.aggregate(Sum("pages"))["pages__sum"] or 0
+    total_documents = qs.count()
+    daily_stats = (
+        qs.annotate(date=TruncDate("timestamp"))
+        .values("date")
+        .annotate(pages=Sum("pages"), documents=Count("id"))
+        .order_by("date")
+    )
+    return {
+        "total_pages": total_pages,
+        "total_documents": total_documents,
+        "daily_stats": daily_stats,
+    }
+
+
+def get_statistics_data(start_date: Any | None, end_date: Any | None) -> dict[str, Any]:
+    from .models import PrintEvent, Department  # local import
+    from accounts.models import User  # local import
+
+    # Departments (cached aggregate)
+    department_cache_key = "department_stats_top"
+    department_stats = cache.get(department_cache_key)
+    if department_stats is None:
+        department_stats = (
+            Department.objects.annotate(
+                total_pages=Sum("users__print_events__pages"),
+                total_documents=Count("users__print_events"),
+                total_size=Sum("users__print_events__byte_size"),
+            )
+            .order_by("-total_pages")
+            .all()
+        )
+        cache.set(department_cache_key, department_stats, 300)
+
+    # Top users
+    user_cache_key = "user_stats_top10"
+    user_stats = cache.get(user_cache_key)
+    if user_stats is None:
+        user_stats = (
+            User.objects.select_related("department")
+            .annotate(
+                total_pages=Sum("print_events__pages"),
+                total_documents=Count("print_events"),
+                total_size=Sum("print_events__byte_size"),
+            )
+            .order_by("-total_pages")[:10]
+        )
+        cache.set(user_cache_key, list(user_stats), 300)
+
+    # Print tree
+    query = PrintEvent.objects.select_related(
+        "printer__department",
+        "printer__model",
+        "user",
+    )
+    if start_date:
+        query = query.filter(timestamp__gte=start_date)
+    if end_date:
+        query = query.filter(timestamp__lte=end_date)
+
+    results = (
+        query.values(
+            "printer__department__code",
+            "printer__department__name",
+            "printer__model__code",
+            "printer__room_number",
+            "printer__printer_index",
+            "user__fio",
+            "document_name",
+        )
+        .annotate(page_sum=Sum("pages"), last_time=Max("timestamp"))
+        .order_by("-page_sum")
+    )
+
+    return {
+        "department_stats": department_stats,
+        "user_stats": user_stats,
+        "tree_results": results,
+    }
 
 

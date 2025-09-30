@@ -41,6 +41,7 @@ class Printer(models.Model):
     )
     room_number = models.CharField('Номер помещения', max_length=10)
     printer_index = models.IntegerField('Индекс принтера')
+    cost_per_page = models.DecimalField('Стоимость страницы', max_digits=8, decimal_places=2, default=0)
     is_active = models.BooleanField('Активен', default=True)
     created_at = models.DateTimeField('Дата создания', default=timezone.now)
 

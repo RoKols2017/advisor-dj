@@ -21,4 +21,6 @@ def update_statistics(sender, instance, created, **kwargs):
     if created:
         # Очищаем кэш статистики
         cache.delete(f'print_stats_{instance.user.department.id}')
-        cache.delete('total_print_stats') 
+        cache.delete('total_print_stats')
+        cache.delete('department_stats_top')
+        cache.delete('user_stats_top10')

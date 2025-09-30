@@ -46,7 +46,7 @@ class PrintEvent(models.Model):
     )
     job_id = models.CharField('ID задания', max_length=64, db_index=True)
     timestamp = models.DateTimeField('Время печати', default=timezone.now, db_index=True)
-    byte_size = models.IntegerField('Размер в байтах')
+    byte_size = models.IntegerField('Размер в байтах', default=0)
     pages = models.IntegerField('Количество страниц')
     created_at = models.DateTimeField('Дата создания', default=timezone.now)
     computer = models.ForeignKey(
@@ -76,3 +76,9 @@ class PrintEvent(models.Model):
 
     def __str__(self):
         return f'{self.document_name} ({self.user})' 
+
+    def get_cost(self):
+        try:
+            return self.printer.cost_per_page * self.pages
+        except Exception:
+            return 0

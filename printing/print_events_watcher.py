@@ -37,6 +37,7 @@ from config.logging import LOGGING
 load_dotenv()
 
 os.environ['LOG_FILE_NAME'] = 'print_events_watcher.log'
+QUARANTINE_DIR = os.getenv('PRINT_EVENTS_QUARANTINE_DIR', './quarantine_dir')
 
 WATCH_DIR = os.getenv('PRINT_EVENTS_WATCH_DIR', './watch_dir')
 PROCESSED_DIR = os.getenv('PRINT_EVENTS_PROCESSED_DIR', './processed_dir')
@@ -85,10 +86,18 @@ class PrintEventHandler(FileSystemEventHandler):
                     break
                 except PermissionError as e:
                     logger.warning(f'Permission denied for {fname} (попытка {attempt+1}/5): {e}')
-                    time.sleep(2)
+                    time.sleep(2 * (attempt + 1))
                 except Exception as e:
                     logger.error(f'Ошибка при обработке {fname} (попытка {attempt+1}/5): {e}', exc_info=True)
-                    time.sleep(2)
+                    time.sleep(2 * (attempt + 1))
+            else:
+                try:
+                    os.makedirs(QUARANTINE_DIR, exist_ok=True)
+                    dest = os.path.join(QUARANTINE_DIR, os.path.basename(fname))
+                    shutil.move(fname, dest)
+                    logger.error(f'Файл перемещён в quarantine: {dest}')
+                except Exception as qe:
+                    logger.error(f'Не удалось переместить в quarantine {fname}: {qe}', exc_info=True)
         # Импорт пользователей AD из CSV
         elif ext == '.csv':
             logger.info(f'Найден CSV-файл пользователей: {fname}')
@@ -105,14 +114,23 @@ class PrintEventHandler(FileSystemEventHandler):
                     break
                 except PermissionError as e:
                     logger.warning(f'Permission denied for {fname} (попытка {attempt+1}/5): {e}')
-                    time.sleep(2)
+                    time.sleep(2 * (attempt + 1))
                 except Exception as e:
                     logger.error(f'Ошибка при обработке CSV {fname} (попытка {attempt+1}/5): {e}', exc_info=True)
-                    time.sleep(2)
+                    time.sleep(2 * (attempt + 1))
+            else:
+                try:
+                    os.makedirs(QUARANTINE_DIR, exist_ok=True)
+                    dest = os.path.join(QUARANTINE_DIR, os.path.basename(fname))
+                    shutil.move(fname, dest)
+                    logger.error(f'CSV-файл перемещён в quarantine: {dest}')
+                except Exception as qe:
+                    logger.error(f'Не удалось переместить CSV в quarantine {fname}: {qe}', exc_info=True)
 
 if __name__ == "__main__":
-    # Гарантируем, что каталог для обработанных файлов существует
+    # Гарантируем, что каталоги существуют
     os.makedirs(PROCESSED_DIR, exist_ok=True)
+    os.makedirs(QUARANTINE_DIR, exist_ok=True)
     event_handler = PrintEventHandler()
     observer = Observer()
     # Следим только за WATCH_DIR, без рекурсии

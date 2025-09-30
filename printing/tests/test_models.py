@@ -1,7 +1,10 @@
 from django.test import TestCase
 from django.utils import timezone
 from decimal import Decimal
-from ..models import PrintEvent, Department, User, Printer
+from printing.models import PrintEvent, Department, Printer
+from printing.models.printer import PrinterModel
+from printing.models.building import Building
+from accounts.models import User
 
 class PrintEventTests(TestCase):
     """
@@ -28,8 +31,15 @@ class PrintEventTests(TestCase):
             password='testpass',
             department=self.department
         )
+        self.building = Building.objects.create(code='B1', name='B1')
+        self.pmodel = PrinterModel.objects.create(code='HP-LJ', manufacturer='HP', model='LJ')
         self.printer = Printer.objects.create(
             name='Test Printer',
+            model=self.pmodel,
+            building=self.building,
+            department=self.department,
+            room_number='101',
+            printer_index=1,
             cost_per_page=Decimal('2.00')
         )
 
@@ -38,6 +48,8 @@ class PrintEventTests(TestCase):
         event = PrintEvent.objects.create(
             user=self.user,
             printer=self.printer,
+            document_id=1,
+            job_id='j1',
             pages=5,
             timestamp=timezone.now()
         )
@@ -49,6 +61,8 @@ class PrintEventTests(TestCase):
         event = PrintEvent.objects.create(
             user=self.user,
             printer=self.printer,
+            document_id=2,
+            job_id='j2',
             pages=5,
             timestamp=timezone.now()
         )

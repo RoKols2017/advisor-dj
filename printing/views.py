@@ -31,7 +31,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         
         # Статистика за последние 30 дней
-        last_30_days = PrintEvent.objects.filter(
+        last_30_days = PrintEvent.objects.select_related('user', 'printer').filter(
             timestamp__gte=timezone.now() - timezone.timedelta(days=30)
         )
         
@@ -69,19 +69,27 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Статистика по отделам
-        department_stats = Department.objects.annotate(
-            total_pages=Sum('users__print_events__pages'),
-            total_documents=Count('users__print_events'),
-            total_size=Sum('users__print_events__byte_size')
-        ).order_by('-total_pages')
+        # Статистика по отделам (кэшируем агрегаты)
+        department_cache_key = 'department_stats_top'
+        department_stats = cache.get(department_cache_key)
+        if department_stats is None:
+            department_stats = Department.objects.prefetch_related("user_set").annotate(
+                total_pages=Sum('users__print_events__pages'),
+                total_documents=Count('users__print_events'),
+                total_size=Sum('users__print_events__byte_size')
+            ).order_by('-total_pages')
+            cache.set(department_cache_key, department_stats, 300)
 
-        # Статистика по пользователям
-        user_stats = User.objects.annotate(
-            total_pages=Sum('print_events__pages'),
-            total_documents=Count('print_events'),
-            total_size=Sum('print_events__byte_size')
-        ).order_by('-total_pages')[:10]
+        # Статистика по пользователям (кэшируем топ-10)
+        user_cache_key = 'user_stats_top10'
+        user_stats = cache.get(user_cache_key)
+        if user_stats is None:
+            user_stats = User.objects.select_related('department').annotate(
+                total_pages=Sum('print_events__pages'),
+                total_documents=Count('print_events'),
+                total_size=Sum('print_events__byte_size')
+            ).order_by('-total_pages')[:10]
+            cache.set(user_cache_key, list(user_stats), 300)
 
         context.update({
             'department_stats': department_stats,

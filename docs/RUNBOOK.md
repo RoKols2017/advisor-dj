@@ -28,9 +28,9 @@ curl -f http://localhost:8000/health/
 ```
 
 ### 3.1 Локальная проверка prod-профиля
-- Для проверки prod overlay локально добавьте `localhost` в `ALLOWED_HOSTS` в `.env.prod`.
-- Либо используйте заголовок Host при запросе health:
+- Для локальной проверки используйте прод‑оверлей и корректный Host:
 ```bash
+docker compose -f docker-compose.prod.yml up -d
 curl -H 'Host: printadvisor.local' -f http://localhost:8000/health/
 ```
 
@@ -67,6 +67,13 @@ docker compose exec db pg_dump -U ${POSTGRES_USER:-advisor} ${POSTGRES_DB:-advis
 1) Откатиться на предыдущий тег образа в compose.
 2) `docker compose pull && up -d`.
 3) При необходимости откатить миграции: `python manage.py migrate <app> <migration>`.
+
+### 9. Прод‑чеклист (кратко)
+- Настройки prod активны; ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS корректны.
+- Reverse‑proxy с TLS настроен; health 200 через HTTPS.
+- Миграции применены; статика собрана.
+- Watcher видит шары; quarantine/processed работают.
+- Smoke зелёный; логи без ошибок; бэкапы настроены.
 
 ---
 title: "Runbook"

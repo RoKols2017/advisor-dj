@@ -210,3 +210,50 @@ docker compose restart web
 # Проверка после изменений
 make smoke
 ```
+
+## ✅ Чек‑лист запуска в продуктивную среду
+
+Без упоминания секретов (они уже в каталоге):
+
+1) Подготовка окружения
+- Проверить, что используется прод‑профиль настроек: `DJANGO_SETTINGS_MODULE=config.settings.production` (в `docker-compose.prod.yml` уже задан).
+- Проверить DNS/ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS в прод‑окружении.
+
+2) Запуск сервиса c прод‑оверлеем
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+3) Инициализация приложения
+```bash
+docker compose -f docker-compose.prod.yml exec web python manage.py migrate --noinput
+docker compose -f docker-compose.prod.yml exec web python manage.py collectstatic --noinput
+```
+
+4) Проверки работоспособности
+```bash
+./scripts/smoke.sh
+curl -f http://localhost:8000/health/
+docker compose -f docker-compose.prod.yml ps
+```
+
+5) Reverse‑proxy и TLS
+- Включить/настроить Nginx/Traefik (TLS, redirect 80→443, HSTS, gzip, `X-Forwarded-*`).
+- Убедиться, что `SECURE_PROXY_SSL_HEADER` задан и health возвращает 200 по HTTPS через прокси.
+
+6) Watcher и источники данных
+- Подключить RO‑шары принт‑серверов к `watcher:/app/data/watch` согласно `docs/how-to/windows-share.md`.
+- Проверить обработку тестового файла: перемещение в `processed/` или `quarantine/` с логом причины.
+
+7) Логи, мониторинг и бэкапы
+- Включить ротацию логов контейнера/хоста для каталога `logs/`.
+- Настроить базовый мониторинг: health, 5xx/Traceback, место на диске.
+- Настроить регулярные бэкапы БД (`pg_dump` + retention) и проверку восстановления.
+
+8) Операционные процедуры
+- Зафиксировать команды в Runbook: перезапуск, миграции, smoke, откат, импорт тестового файла watcher.
+- Провести тренировкуRollback на тестовом окружении.
+
+9) Финальная валидация
+- `python manage.py check --deploy` — без предупреждений.
+- Smoke/health зелёные, reverse‑proxy выдаёт валидный TLS, watcher активен.

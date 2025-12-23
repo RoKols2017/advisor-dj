@@ -164,3 +164,7 @@ cython_debug/
 # Setings docker/docker-compose
 docker-compose.override.yml
 *.env.docker
+
+# Data directory (локальные данные для импорта)
+data/
+!data/.gitkeep

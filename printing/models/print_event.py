@@ -44,7 +44,7 @@ class PrintEvent(models.Model):
         related_name='print_events',
         verbose_name='Принтер'
     )
-    job_id = models.CharField('ID задания', max_length=64, db_index=True)
+    job_id = models.CharField('ID задания', max_length=64, db_index=True, unique=True)
     timestamp = models.DateTimeField('Время печати', default=timezone.now, db_index=True)
     byte_size = models.IntegerField('Размер в байтах', default=0)
     pages = models.IntegerField('Количество страниц')
@@ -72,6 +72,8 @@ class PrintEvent(models.Model):
             models.Index(fields=['document_id']),
             models.Index(fields=['job_id']),
             models.Index(fields=['timestamp']),
+            models.Index(fields=['user', 'timestamp']),  # Для запросов по пользователю с сортировкой по дате
+            models.Index(fields=['printer', 'timestamp']),  # Для запросов по принтеру с сортировкой по дате
         ]
 
     def __str__(self):

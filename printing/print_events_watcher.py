@@ -71,11 +71,13 @@ class PrintEventHandler(FileSystemEventHandler):
     - Перемещает обработанные файлы в PROCESSED_DIR.
     - Логирует все действия и ошибки.
     """
-    def on_created(self, event):
-        # Игнорируем каталоги
-        if event.is_directory:
-            return
-        fname = event.src_path
+    def _process_file(self, fname: str) -> None:
+        """
+        Обрабатывает один файл: импортирует данные и перемещает файл.
+
+        Args:
+            fname: Полный путь к файлу для обработки
+        """
         ext = os.path.splitext(fname)[1].lower()
         # Импорт событий печати из JSON
         if ext == '.json':
@@ -168,16 +170,78 @@ class PrintEventHandler(FileSystemEventHandler):
                 except Exception as qe:
                     logger.error(f'Не удалось переместить CSV в quarantine {fname}: {qe}', exc_info=True)
 
+    def on_created(self, event):
+        """
+        Обрабатывает событие создания нового файла.
+
+        Args:
+            event: Событие файловой системы от watchdog
+        """
+        # Игнорируем каталоги
+        if event.is_directory:
+            return
+        self._process_file(event.src_path)
+
+
+def process_existing_files(watch_dir: str) -> None:
+    """
+    Обрабатывает все существующие файлы в каталоге watch при старте watcher.
+
+    Эта функция гарантирует, что файлы, которые были скопированы до запуска watcher,
+    также будут обработаны.
+
+    Args:
+        watch_dir: Каталог для поиска файлов
+    """
+    if not os.path.exists(watch_dir):
+        logger.warning(f'Каталог {watch_dir} не существует')
+        return
+
+    event_handler = PrintEventHandler()
+    # Получаем список всех файлов с расширениями .json и .csv
+    json_files = []
+    csv_files = []
+
+    try:
+        for entry in os.listdir(watch_dir):
+            full_path = os.path.join(watch_dir, entry)
+            if os.path.isfile(full_path):
+                ext = os.path.splitext(entry)[1].lower()
+                if ext == '.json':
+                    json_files.append(full_path)
+                elif ext == '.csv':
+                    csv_files.append(full_path)
+    except OSError as e:
+        logger.error(f'Ошибка при чтении каталога {watch_dir}: {e}', exc_info=True)
+        return
+
+    total_files = len(json_files) + len(csv_files)
+    if total_files > 0:
+        logger.info(f'Найдено существующих файлов для обработки: {len(json_files)} JSON, {len(csv_files)} CSV')
+        for fname in json_files + csv_files:
+            logger.info(f'Обработка существующего файла: {fname}')
+            event_handler._process_file(fname)
+    else:
+        logger.info(f'Существующих файлов для обработки в {watch_dir} не найдено')
+
+
 if __name__ == "__main__":
     # Гарантируем, что каталоги существуют
     os.makedirs(PROCESSED_DIR, exist_ok=True)
     os.makedirs(QUARANTINE_DIR, exist_ok=True)
+    os.makedirs(WATCH_DIR, exist_ok=True)
+    
+    # Обрабатываем все существующие файлы при старте
+    logger.info('Обработка существующих файлов при старте...')
+    process_existing_files(WATCH_DIR)
+    
+    # Запускаем слежение за новыми файлами
     event_handler = PrintEventHandler()
     observer = Observer()
     # Следим только за WATCH_DIR, без рекурсии
     observer.schedule(event_handler, WATCH_DIR, recursive=False)
     observer.start()
-    logger.info(f'Слежение за {WATCH_DIR}... (Ctrl+C для выхода)')
+    logger.info(f'Слежение за новыми файлами в {WATCH_DIR}... (Ctrl+C для выхода)')
     try:
         while True:
             time.sleep(1)

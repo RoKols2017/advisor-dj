@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   db:
@@ -38,10 +37,10 @@ services:
       - IMPORT_TOKEN=${IMPORT_TOKEN}
       - ENABLE_WINDOWS_AUTH=${ENABLE_WINDOWS_AUTH:-0}
     ports:
-      - "${WEB_PORT:-8000}:8000"
+      - "${WEB_PORT:-8001}:8000"
     volumes:
       - logs:/app/logs
-      - data:/app/data
+      - ./data:/app/data
     depends_on:
       db:
         condition: service_healthy
@@ -76,7 +75,7 @@ services:
       - ENABLE_WINDOWS_AUTH=${ENABLE_WINDOWS_AUTH:-0}
     volumes:
       - logs:/app/logs
-      - data:/app/data
+      - ./data:/app/data
     depends_on:
       web:
         condition: service_healthy
@@ -96,8 +95,6 @@ volumes:
   pgdata:
     driver: local
   logs:
-    driver: local
-  data:
     driver: local
 
 networks:

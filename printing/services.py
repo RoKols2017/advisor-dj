@@ -57,8 +57,11 @@ def _get_or_create_ci_printer_model(model_code: str) -> PrinterModel:
     existing = PrinterModel.objects.filter(code__iexact=normalized).first()
     if existing:
         return existing
-    manufacturer = normalized.split()[0]
-    return PrinterModel.objects.create(code=normalized, manufacturer=manufacturer)
+    # Парсим код модели: ожидается формат "Manufacturer Model" или просто код
+    parts = normalized.split(maxsplit=1)
+    manufacturer = parts[0] if parts else normalized
+    model = parts[1] if len(parts) > 1 else ""
+    return PrinterModel.objects.create(code=normalized, manufacturer=manufacturer, model=model)
 
 
 def _get_or_create_ci_printer(
@@ -122,13 +125,23 @@ def import_users_from_csv_stream(file_bytes) -> dict[str, Any]:
                     )
                     if was_created:
                         created += 1
-                except Exception as e:  # noqa: BLE001 - логируем и продолжаем пакет
-                    msg = f"Row error {row}: {e}"
-                    logger.error(msg)
+                except (ValueError, TypeError, KeyError) as e:
+                    # Обрабатываем ожидаемые ошибки валидации отдельно
+                    msg = f"Row validation error (line {reader.line_num}): {e}"
+                    logger.warning(msg, exc_info=True)
                     errors.append(msg)
+                except Exception as e:  # noqa: BLE001 - логируем и продолжаем пакет
+                    msg = f"Row processing error (line {reader.line_num}): {e}"
+                    logger.error(msg, exc_info=True)
+                    errors.append(msg)
+    except (UnicodeDecodeError, csv.Error) as e:
+        # Обрабатываем ошибки чтения файла отдельно
+        msg = f"File reading error: {e}"
+        logger.error(msg, exc_info=True)
+        errors.append(msg)
     except Exception as e:  # noqa: BLE001
         msg = f"Users import failed: {e}"
-        logger.error(msg)
+        logger.error(msg, exc_info=True)
         errors.append(msg)
     return {"created": created, "errors": errors}
 
@@ -136,84 +149,118 @@ def import_users_from_csv_stream(file_bytes) -> dict[str, Any]:
 def import_print_events(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
     created = 0
     errors: list[str] = []
-    for event in events:
-        try:
-            with transaction.atomic():
-                username = (event.get("Param3") or "").strip().lower()
-                document_name = event.get("Param2", "")
-                document_id = int(event.get("Param1") or 0)
-                byte_size = int(event.get("Param7") or 0)
-                pages = int(event.get("Param8") or 0)
-                timestamp_ms = int(str(event.get("TimeCreated", "0")).replace("/Date(", "").replace(")/", ""))
-                ts = timezone.datetime.fromtimestamp(timestamp_ms / 1000)
-                if timezone.is_naive(ts):
-                    ts = timezone.make_aware(ts, timezone.get_default_timezone())
-                job_id = event.get("JobID") or "UNKNOWN"
-
-                if PrintEvent.objects.filter(job_id=job_id).exists():
-                    continue
-
-                printer_name_raw = (event.get("Param5") or "").strip().lower()
-                parts = printer_name_raw.split("-")
-                if len(parts) != 5:
-                    errors.append(f"Invalid printer format: {printer_name_raw}")
-                    continue
-                model_code, bld_code, dept_code, room_number, printer_index_str = parts
+    BATCH_SIZE = 100  # Обрабатываем события батчами для оптимизации транзакций
+    
+    events_list = list(events) if not isinstance(events, list) else events
+    total_events = len(events_list)
+    
+    # Получаем все существующие job_id одним запросом для дедупликации
+    existing_job_ids = set(
+        PrintEvent.objects.filter(
+            job_id__in=[e.get("JobID") or "UNKNOWN" for e in events_list if e.get("JobID")]
+        ).values_list("job_id", flat=True)
+    )
+    
+    # Обрабатываем события батчами
+    for batch_start in range(0, total_events, BATCH_SIZE):
+        batch_end = min(batch_start + BATCH_SIZE, total_events)
+        batch_events = events_list[batch_start:batch_end]
+        
+        with transaction.atomic():
+            batch_created = 0
+            for event in batch_events:
                 try:
-                    printer_index = int(printer_index_str)
-                except ValueError:
-                    errors.append(f"Invalid printer index: {printer_index_str}")
-                    continue
+                    username = (event.get("Param3") or "").strip().lower()
+                    document_name = event.get("Param2", "")
+                    document_id = int(event.get("Param1") or 0)
+                    byte_size = int(event.get("Param7") or 0)
+                    pages = int(event.get("Param8") or 0)
+                    timestamp_ms = int(str(event.get("TimeCreated", "0")).replace("/Date(", "").replace(")/", ""))
+                    ts = timezone.datetime.fromtimestamp(timestamp_ms / 1000)
+                    if timezone.is_naive(ts):
+                        ts = timezone.make_aware(ts, timezone.get_default_timezone())
+                    job_id = event.get("JobID") or "UNKNOWN"
 
-                building = _get_or_create_ci_building(bld_code)
-                department = _get_or_create_ci_department(dept_code)
-                printer_model = _get_or_create_ci_printer_model(model_code)
-                printer = _get_or_create_ci_printer(
-                    building=building,
-                    room_number=room_number,
-                    printer_index=printer_index,
-                    printer_model=printer_model,
-                    department=department,
-                    full_name=printer_name_raw,
-                )
+                    # Проверка на дубликаты через предзагруженный set
+                    if job_id in existing_job_ids:
+                        continue
+                    existing_job_ids.add(job_id)  # Добавляем в set для проверки в рамках батча
 
-                try:
-                    user = User.objects.get(username__iexact=username)
-                except User.DoesNotExist:
-                    errors.append(f"User not found: {username}")
-                    continue
+                    printer_name_raw = (event.get("Param5") or "").strip().lower()
+                    parts = printer_name_raw.split("-")
+                    if len(parts) != 5:
+                        errors.append(f"Invalid printer format: {printer_name_raw}")
+                        continue
+                    model_code, bld_code, dept_code, room_number, printer_index_str = parts
+                    try:
+                        printer_index = int(printer_index_str)
+                    except ValueError:
+                        errors.append(f"Invalid printer index: {printer_index_str}")
+                        continue
 
-                computer: Computer | None = None
-                computer_name = (event.get("Param4") or "").strip().lower()
-                if computer_name:
-                    computer = Computer.objects.filter(name__iexact=computer_name).first()
-                    if not computer:
-                        computer = Computer.objects.create(name=computer_name)
+                    building = _get_or_create_ci_building(bld_code)
+                    department = _get_or_create_ci_department(dept_code)
+                    printer_model = _get_or_create_ci_printer_model(model_code)
+                    printer = _get_or_create_ci_printer(
+                        building=building,
+                        room_number=room_number,
+                        printer_index=printer_index,
+                        printer_model=printer_model,
+                        department=department,
+                        full_name=printer_name_raw,
+                    )
 
-                port: Port | None = None
-                port_name = (event.get("Param6") or "").strip().lower()
-                if port_name:
-                    port = Port.objects.filter(name__iexact=port_name).first()
-                    if not port:
-                        port = Port.objects.create(name=port_name)
+                    # Получаем или создаем пользователя автоматически для избежания потери данных
+                    user = User.objects.filter(username__iexact=username).first()
+                    if not user:
+                        logger.warning(f"User '{username}' not found during import, creating automatically")
+                        # Создаем пользователя с минимальными данными
+                        user = User.objects.create(
+                            username=username,
+                            fio=username,  # Временное значение, можно обновить позже
+                            is_active=True,
+                        )
+                        errors.append(f"User '{username}' was automatically created (missing FIO and department)")
 
-                PrintEvent.objects.create(
-                    document_id=document_id,
-                    document_name=document_name,
-                    user=user,
-                    printer=printer,
-                    job_id=job_id,
-                    timestamp=ts,
-                    byte_size=byte_size,
-                    pages=pages,
-                    computer=computer,
-                    port=port,
-                )
-                created += 1
-        except Exception as e:  # noqa: BLE001
-            msg = f"Event import error: {e}"
-            logger.error(msg)
-            errors.append(msg)
+                    computer: Computer | None = None
+                    computer_name = (event.get("Param4") or "").strip().lower()
+                    if computer_name:
+                        computer = Computer.objects.filter(name__iexact=computer_name).first()
+                        if not computer:
+                            computer = Computer.objects.create(name=computer_name)
+
+                    port: Port | None = None
+                    port_name = (event.get("Param6") or "").strip().lower()
+                    if port_name:
+                        port = Port.objects.filter(name__iexact=port_name).first()
+                        if not port:
+                            port = Port.objects.create(name=port_name)
+
+                    PrintEvent.objects.create(
+                        document_id=document_id,
+                        document_name=document_name,
+                        user=user,
+                        printer=printer,
+                        job_id=job_id,
+                        timestamp=ts,
+                        byte_size=byte_size,
+                        pages=pages,
+                        computer=computer,
+                        port=port,
+                    )
+                    batch_created += 1
+                except (ValueError, TypeError, KeyError) as e:
+                    # Обрабатываем ожидаемые ошибки валидации отдельно
+                    msg = f"Event validation error: {e}"
+                    logger.warning(msg, exc_info=True)
+                    errors.append(msg)
+                except Exception as e:  # noqa: BLE001
+                    # Неожиданные ошибки логируются с полным traceback
+                    msg = f"Event import error: {e}"
+                    logger.error(msg, exc_info=True)
+                    errors.append(msg)
+            created += batch_created
+    
     return {"created": created, "errors": errors}
 
 

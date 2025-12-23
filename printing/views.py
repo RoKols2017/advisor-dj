@@ -5,13 +5,13 @@ from datetime import datetime
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.db.models import Count, Max, Sum
 from django.shortcuts import render
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import cache_page
-from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView, TemplateView
 from django_filters.views import FilterView
 from django_tables2 import SingleTableMixin
@@ -73,17 +73,15 @@ class PrintTreeView(TemplateView):
         context = super().get_context_data(**kwargs)
         start_date = self.request.GET.get('start_date', '').strip()
         end_date = self.request.GET.get('end_date', '').strip()
-        query = PrintEvent.objects.select_related(
-            'printer__department',
-            'printer__model',
-            'user'
-        )
+        
+        # Парсим даты из запроса
+        start_dt = None
+        end_dt = None
         if start_date:
             try:
                 start_dt = datetime.strptime(start_date, "%Y-%m-%d")
                 if settings.USE_TZ and timezone.is_naive(start_dt):
                     start_dt = timezone.make_aware(start_dt, timezone.get_default_timezone())
-                query = query.filter(timestamp__gte=start_dt)
             except ValueError:
                 pass
         if end_date:
@@ -92,23 +90,30 @@ class PrintTreeView(TemplateView):
                 end_dt = end_dt.replace(hour=23, minute=59, second=59)
                 if settings.USE_TZ and timezone.is_naive(end_dt):
                     end_dt = timezone.make_aware(end_dt, timezone.get_default_timezone())
-                query = query.filter(timestamp__lte=end_dt)
             except ValueError:
                 pass
+        
         cache_key = f'print_tree_{start_date}_{end_date}'
         tree_data = cache.get(cache_key)
         if tree_data is None:
-            results = svc.get_statistics_data(start_date=None, end_date=None)['tree_results']
+            # Передаем реальные даты в сервис для фильтрации
+            results = svc.get_statistics_data(start_date=start_dt, end_date=end_dt)['tree_results']
             tree = {}
             total_pages = 0
             for row in results:
-                dept_name = f"{row['printer__department__code']} — {row['printer__department__name']}"
-                printer_name = (f"{row['printer__model__code']}-"
-                              f"{row['printer__room_number']}-"
-                              f"{row['printer__printer_index']}")
-                user_name = row['user__fio']
-                doc_name = row['document_name']
-                pages = row['page_sum']
+                # Обработка None значений для безопасности
+                dept_code = row.get('printer__department__code') or 'N/A'
+                dept_name_val = row.get('printer__department__name') or 'Без отдела'
+                dept_name = f"{dept_code} — {dept_name_val}"
+                
+                model_code = row.get('printer__model__code') or 'N/A'
+                room = row.get('printer__room_number') or 'N/A'
+                index = row.get('printer__printer_index') or 'N/A'
+                printer_name = f"{model_code}-{room}-{index}"
+                
+                user_name = row.get('user__fio') or 'Неизвестный'
+                doc_name = row.get('document_name') or 'Без названия'
+                pages = row.get('page_sum') or 0
                 total_pages += pages
                 dept = tree.setdefault(dept_name, {
                     'total': 0,
@@ -128,7 +133,7 @@ class PrintTreeView(TemplateView):
                 doc_entry = user['docs'].setdefault(doc_name, [])
                 doc_entry.append({
                     'pages': pages,
-                    'timestamp': row['last_time']
+                    'timestamp': row.get('last_time')
                 })
             # Сортировка и проценты
             sorted_tree = OrderedDict()
@@ -178,6 +183,8 @@ class PrintTreeView(TemplateView):
 
 
 class ImportUsersView(LoginRequiredMixin, View):
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 МБ максимальный размер файла
+    
     def get(self, request):
         return render(request, 'printing/import_users_result.html', {'result': None})
 
@@ -191,12 +198,18 @@ class ImportUsersView(LoginRequiredMixin, View):
             return render(request, 'printing/import_users_result.html', {
                 'result': {'error': 'Неверный формат файла. Ожидается CSV'}
             })
+        # Проверка размера файла
+        if file.size > self.MAX_FILE_SIZE:
+            return render(request, 'printing/import_users_result.html', {
+                'result': {'error': f'Размер файла превышает допустимый лимит ({self.MAX_FILE_SIZE / 1024 / 1024:.1f} МБ)'}
+            })
         result = import_users_from_csv_stream(file)
         return render(request, 'printing/import_users_result.html', {'result': result})
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class ImportPrintEventsView(LoginRequiredMixin, View):
+    MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 МБ максимальный размер файла для JSON событий
+    
     def get(self, request):
         return render(request, 'printing/import_print_events_result.html', {'result': None})
 
@@ -207,14 +220,31 @@ class ImportPrintEventsView(LoginRequiredMixin, View):
         if 'file' in request.FILES:
             try:
                 file = request.FILES['file']
-                events = json.load(file)
-            except Exception as e:
+                # Проверка размера файла
+                if file.size > self.MAX_FILE_SIZE:
+                    error = f'Размер файла превышает допустимый лимит ({self.MAX_FILE_SIZE / 1024 / 1024:.1f} МБ)'
+                else:
+                    events = json.load(file)
+            except json.JSONDecodeError as e:
                 error = f'Ошибка парсинга JSON-файла: {str(e)}'
-        else:
-            try:
-                events = json.loads(request.body.decode('utf-8'))
+            except (ValueError, TypeError) as e:
+                error = f'Ошибка обработки файла: {str(e)}'
             except Exception as e:
-                error = f'Ошибка парсинга JSON: {str(e)}'
+                error = f'Неожиданная ошибка при обработке файла: {str(e)}'
+        else:
+            # Проверка размера тела запроса
+            body_size = len(request.body)
+            if body_size > self.MAX_FILE_SIZE:
+                error = f'Размер данных превышает допустимый лимит ({self.MAX_FILE_SIZE / 1024 / 1024:.1f} МБ)'
+            else:
+                try:
+                    events = json.loads(request.body.decode('utf-8'))
+                except json.JSONDecodeError as e:
+                    error = f'Ошибка парсинга JSON: {str(e)}'
+                except (UnicodeDecodeError, ValueError, TypeError) as e:
+                    error = f'Ошибка декодирования данных: {str(e)}'
+                except Exception as e:
+                    error = f'Неожиданная ошибка при обработке данных: {str(e)}'
         if error:
             return render(request, 'printing/import_print_events_result.html', {'result': {'error': error}})
         if not isinstance(events, list):

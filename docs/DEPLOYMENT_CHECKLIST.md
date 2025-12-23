@@ -209,10 +209,16 @@ docker compose up -d
 # 7. Выполнить миграции БД
 docker compose exec web python manage.py migrate
 
-# 8. Создать суперпользователя (опционально)
+# 6. Настроить автозапуск при старте системы (опционально)
+sudo cp advisor-dj.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable advisor-dj.service
+sudo systemctl start advisor-dj.service
+
+# 7. Создать суперпользователя (опционально)
 docker compose exec web python manage.py createsuperuser
 
-# 9. Проверить статус
+# 8. Проверить статус
 docker compose ps
 docker compose logs -f watcher  # Просмотр логов watcher
 ```

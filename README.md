@@ -2,7 +2,7 @@
 title: "Print Advisor"
 type: project
 status: draft
-last_verified: "2025-09-29"
+last_verified: "2025-12-23"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -19,9 +19,11 @@ owner: "@rom"
 ## 🛠️ Технологии
 
 - Backend: Python 3.13, Django 5.x
-- DB: SQLite (локально), PostgreSQL (prod)
+- DB: SQLite (локально), PostgreSQL 15 (production)
 - UI: Django Templates, Bootstrap 5
 - Дополнительно: django-tables2, django-filter, django-import-export
+- Контейнеризация: Docker, Docker Compose
+- Мониторинг: Автоматический watcher для обработки файлов (JSON/CSV)
 
 ## 🚀 Быстрый старт (WSL/Ubuntu)
 
@@ -39,28 +41,70 @@ python manage.py runserver 0.0.0.0:8000
 
 ## 🏗️ Docker / Production
 
+### Архитектура
+
+Приложение состоит из трех сервисов:
+- **web**: Django веб-приложение (порт 8001 по умолчанию)
+- **watcher**: Демон мониторинга каталога для автоматического импорта данных
+- **db**: PostgreSQL 15 база данных (порт 5432)
+
+Все сервисы имеют политику автоматического перезапуска (`restart: unless-stopped`).
+
 ### Quick Start with Docker
 ```bash
 # Клонировать и настроить
-git clone <repository-url>
+git clone git@github.com:RoKols2017/advisor-dj.git
 cd advisor-dj
 cp .env.example .env
+# Отредактировать .env (обязательно: SECRET_KEY, POSTGRES_PASSWORD, ALLOWED_HOSTS)
+
+# Создать каталоги для данных
+mkdir -p data/{watch,processed,quarantine}
+sudo chmod 777 data/{watch,processed,quarantine}
 
 # Запустить весь стек
 make up-build
 # или
 docker compose up --build -d
 
+# Выполнить миграции
+docker compose exec web python manage.py migrate
+
+# Создать суперпользователя
+docker compose exec web python manage.py createsuperuser
+
 # Проверить статус
 make status
 make smoke
 ```
 
+### Автозапуск при старте системы
+
+Для автоматического запуска контейнеров при перезагрузке сервера:
+
+```bash
+sudo cp advisor-dj.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable advisor-dj.service
+sudo systemctl start advisor-dj.service
+```
+
+### Автоматический импорт данных
+
+Watcher автоматически отслеживает каталог `data/watch/` и обрабатывает:
+- **JSON-файлы** → импорт событий печати
+- **CSV-файлы** → импорт пользователей
+
+Обработанные файлы перемещаются в `data/processed/`, файлы с ошибками — в `data/quarantine/`.
+
 ### Production Deployment
-- **Docker Compose**: полная документация в `docs/DEPLOY_PLAN.md`
+
+- **Полная документация**: `docs/DEPLOYMENT_READINESS.md` и `docs/DEPLOYMENT_CHECKLIST.md`
+- **Docker Compose**: `docs/DEPLOY_PLAN.md`
 - **Health Checks**: автоматические проверки всех сервисов
 - **Monitoring**: логи, метрики, smoke-тесты
 - **CI/CD**: GitHub Actions с Docker образами
+- **Развертывание в ЛВС без интернета**: см. `docs/DEPLOYMENT_CHECKLIST.md`
 
 ## 🧪 Тестирование
 
@@ -103,18 +147,44 @@ pytest -m "not slow" -q
 ## 📁 Структура проекта
 
 ```
-accounts/   printing/   config/   templates/   static/   docs/   manage.py
+advisor-dj/
+├── accounts/          # Управление пользователями и аутентификация
+├── printing/          # Основное приложение (модели, views, watcher)
+├── config/            # Настройки Django (settings, urls, logging)
+├── templates/         # HTML шаблоны
+├── static/            # Статические файлы (CSS, JS)
+├── data/              # Каталоги для обработки файлов (watch, processed, quarantine)
+├── docs/              # Документация
+├── scripts/           # Вспомогательные скрипты (smoke tests, monitoring)
+├── docker-compose.yml # Конфигурация Docker Compose
+├── Dockerfile         # Образ для web-сервиса
+├── Dockerfile.watcher # Образ для watcher-сервиса
+├── advisor-dj.service # Systemd unit для автозапуска
+└── manage.py          # Django management скрипт
 ```
 
 ## 📚 Документация
 
-- Статус проекта: [docs/STATUS.md](docs/STATUS.md)
+### Основная документация
+
+- **Развертывание**: 
+  - [docs/DEPLOYMENT_READINESS.md](docs/DEPLOYMENT_READINESS.md) - готовность и чеклист для нового сервера
+  - [docs/DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md) - подробный чеклист для ЛВС без интернета
+  - [docs/DEPLOY_PLAN.md](docs/DEPLOY_PLAN.md) - общий план деплоя
+  - [docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md) - руководство по деплою
+- **Watcher и файлы**: [docs/FILE_WATCHER_SETUP.md](docs/FILE_WATCHER_SETUP.md) - настройка watcher и прав доступа
+- **Эксплуатация**: [docs/RUNBOOK.md](docs/RUNBOOK.md) - операционные задачи
+- **Статус проекта**: [docs/STATUS.md](docs/STATUS.md) - текущий статус и риски
+- **Переменные окружения**: [docs/ENV.md](docs/ENV.md) - описание переменных окружения
+
+### Дополнительная документация
+
 - План рефакторинга: [docs/REFACTOR_PLAN.md](docs/REFACTOR_PLAN.md)
-- План деплоя: [docs/DEPLOY_PLAN.md](docs/DEPLOY_PLAN.md)
-- Runbook (эксплуатация): [docs/RUNBOOK.md](docs/RUNBOOK.md)
-- Переменные окружения (ENV): [docs/ENV.md](docs/ENV.md)
-- How-to: Windows SMB шары → watcher: [docs/how-to/windows-share.md](docs/how-to/windows-share.md)
-- Дополнительно: [docs/DEV_PLAN.md](docs/DEV_PLAN.md), `docs/concepts/`, `docs/reference/`, `docs/how-to/`, `docs/archive/`
+- Критический анализ: [docs/CRITICAL_ANALYSIS.md](docs/CRITICAL_ANALYSIS.md)
+- План разработки: [docs/DEV_PLAN.md](docs/DEV_PLAN.md)
+- How-to гайды: [docs/how-to/](docs/how-to/) - Windows SMB шары, разработка, деплой
+- Справочная информация: `docs/concepts/`, `docs/reference/`
+- Архив: `docs/archive/`
 
 ## 📞 Поддержка
 

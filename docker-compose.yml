@@ -18,6 +18,7 @@ services:
       retries: 5
     networks:
       - advisor-network
+    restart: unless-stopped
 
   web:
     build:

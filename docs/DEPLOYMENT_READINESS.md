@@ -8,9 +8,11 @@
 ### 1. Конфигурация Docker
 
 - ✅ `docker-compose.yml` - настроен для всех сервисов (web, watcher, db)
+- ✅ `restart: unless-stopped` - настроен для всех сервисов (автоматический перезапуск)
 - ✅ `Dockerfile` - для web-контейнера
 - ✅ `Dockerfile.watcher` - для watcher-контейнера
 - ✅ Структура каталогов `data/` (watch, processed, quarantine)
+- ✅ `advisor-dj.service` - systemd unit файл для автозапуска при старте системы
 
 ### 2. Переменные окружения
 
@@ -203,7 +205,30 @@ docker compose exec web python manage.py migrate
 docker compose exec web python manage.py createsuperuser
 ```
 
-### Шаг 8: Проверка работоспособности
+### Шаг 8: Настройка автозапуска при старте системы (опционально)
+
+Для автоматического запуска контейнеров при перезагрузке сервера:
+
+```bash
+# Скопировать systemd unit файл
+sudo cp advisor-dj.service /etc/systemd/system/
+
+# Перезагрузить конфигурацию systemd
+sudo systemctl daemon-reload
+
+# Включить автозапуск
+sudo systemctl enable advisor-dj.service
+
+# Запустить сервис
+sudo systemctl start advisor-dj.service
+
+# Проверить статус
+sudo systemctl status advisor-dj.service
+```
+
+**Примечание:** Все контейнеры уже имеют политику `restart: unless-stopped`, которая обеспечивает автоматический перезапуск при перезапуске Docker. Systemd сервис нужен для запуска контейнеров после полной перезагрузки системы.
+
+### Шаг 9: Проверка работоспособности
 
 ```bash
 # Проверить статус
@@ -269,4 +294,5 @@ docker compose logs watcher
 5. Выполнить миграции и создать суперпользователя
 
 После этого приложение будет готово к работе.
+
 

@@ -153,17 +153,34 @@ scp -r advisor-dj user@new-server:/opt/
 
 ### Шаг 2: Настройка переменных окружения
 
+**Рекомендуемый способ:** Использовать скрипт генерации .env файла:
+
 ```bash
 cd /opt/advisor-dj
-cp .env.example .env  # или создать новый
+
+# Автоматическая генерация со всеми необходимыми ключами
+./scripts/generate_env.sh
+
+# Или интерактивный режим (для настройки параметров)
+./scripts/generate_env.sh --interactive
+
+# Или с указанием разрешенных хостов
+./scripts/generate_env.sh --allowed-hosts "192.168.1.100,localhost,127.0.0.1"
+```
+
+**Альтернативный способ (ручной):**
+
+```bash
+cd /opt/advisor-dj
+cp .env.example .env  # если есть шаблон
 
 # Отредактировать .env
 nano .env
 
 # Обязательно обновить:
 # - ALLOWED_HOSTS=<IP_СЕРВЕРА>
-# - SECRET_KEY (можно оставить или сгенерировать новый)
-# - POSTGRES_PASSWORD (можно оставить или сгенерировать новый)
+# - SECRET_KEY (сгенерировать: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())")
+# - POSTGRES_PASSWORD (сгенерировать: openssl rand -base64 48)
 ```
 
 ### Шаг 3: Настройка каталогов и прав

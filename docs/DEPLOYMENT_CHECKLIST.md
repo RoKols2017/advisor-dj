@@ -121,18 +121,39 @@ docker compose up -d
 
 ### 4. Настройка переменных окружения
 
-Создать `.env` файл на целевой машине:
+**Рекомендуемый способ:** Использовать скрипт автоматической генерации:
+
+```bash
+# Автоматическая генерация .env со всеми ключами
+./scripts/generate_env.sh
+
+# Или интерактивный режим для настройки параметров
+./scripts/generate_env.sh --interactive
+
+# С указанием IP адресов сервера
+./scripts/generate_env.sh --allowed-hosts "192.168.1.100,localhost,127.0.0.1"
+```
+
+Скрипт автоматически генерирует:
+- `SECRET_KEY` (безопасный ключ Django)
+- `POSTGRES_PASSWORD` (64 символа)
+- `IMPORT_TOKEN` (токен для импорта)
+- Определяет `ALLOWED_HOSTS` (автоматически или вручную)
+
+**Ручной способ (если скрипт недоступен):**
+
+Создать `.env` файл вручную:
 
 ```bash
 # База данных
 POSTGRES_DB=advisor
 POSTGRES_USER=advisor
-POSTGRES_PASSWORD=your-strong-password-here
+POSTGRES_PASSWORD=your-strong-password-here  # Генерировать: openssl rand -base64 48
 POSTGRES_PORT=5432
 
 # Django
 DEBUG=0
-SECRET_KEY=your-very-long-secret-key-here-min-50-chars
+SECRET_KEY=your-very-long-secret-key-here-min-50-chars  # Генерировать через Django
 ALLOWED_HOSTS=your-server-ip,localhost,127.0.0.1
 DJANGO_SETTINGS_MODULE=config.settings.docker
 
@@ -147,13 +168,11 @@ WATCHER_LOG_FILE_NAME=print_events_watcher.log
 PRINT_EVENTS_WATCH_DIR=/app/data/watch
 PRINT_EVENTS_PROCESSED_DIR=/app/data/processed
 PRINT_EVENTS_QUARANTINE_DIR=/app/data/quarantine
-WATCHER_MAX_RETRIES=5
-WATCHER_BACKOFF_BASE=2
-WATCHER_BACKOFF_MAX=30
-WATCHER_DEADLINE_SECONDS=300
+IMPORT_TOKEN=your-import-token  # Генерировать: openssl rand -hex 32
+ENABLE_WINDOWS_AUTH=0
 
 # Порты
-WEB_PORT=8000
+WEB_PORT=8001
 ```
 
 ---

@@ -55,8 +55,12 @@ python manage.py runserver 0.0.0.0:8000
 # Клонировать и настроить
 git clone git@github.com:RoKols2017/advisor-dj.git
 cd advisor-dj
-cp .env.example .env
-# Отредактировать .env (обязательно: SECRET_KEY, POSTGRES_PASSWORD, ALLOWED_HOSTS)
+
+# Сгенерировать .env файл со всеми необходимыми ключами
+./scripts/generate_env.sh
+
+# Или интерактивный режим для настройки параметров
+# ./scripts/generate_env.sh --interactive
 
 # Создать каталоги для данных
 mkdir -p data/{watch,processed,quarantine}

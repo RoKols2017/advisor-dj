@@ -199,3 +199,5 @@ echo -e "  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:0:10}... (${#POSTGRES_PASSWORD
 echo -e "  IMPORT_TOKEN: ${IMPORT_TOKEN:0:10}... (${#IMPORT_TOKEN} символов)"
 echo ""
 
+
+

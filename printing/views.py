@@ -1,6 +1,6 @@
 import json
 from collections import OrderedDict
-from datetime import datetime
+from datetime import date, datetime, time
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -71,29 +71,52 @@ class PrintTreeView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        start_date = self.request.GET.get('start_date', '').strip()
-        end_date = self.request.GET.get('end_date', '').strip()
+        start_date_str = self.request.GET.get('start_date', '').strip()
+        end_date_str = self.request.GET.get('end_date', '').strip()
+        
+        # Если даты не указаны, устанавливаем по умолчанию:
+        # с первого числа текущего месяца до сегодня
+        if not start_date_str or not end_date_str:
+            today = date.today()
+            default_start = date(today.year, today.month, 1)
+            default_end = today
+            
+            if not start_date_str:
+                start_date_str = default_start.strftime("%Y-%m-%d")
+            if not end_date_str:
+                end_date_str = default_end.strftime("%Y-%m-%d")
         
         # Парсим даты из запроса
         start_dt = None
         end_dt = None
-        if start_date:
+        if start_date_str:
             try:
-                start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+                start_dt = datetime.strptime(start_date_str, "%Y-%m-%d")
                 if settings.USE_TZ and timezone.is_naive(start_dt):
                     start_dt = timezone.make_aware(start_dt, timezone.get_default_timezone())
             except ValueError:
                 pass
-        if end_date:
+        if end_date_str:
             try:
-                end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+                end_dt = datetime.strptime(end_date_str, "%Y-%m-%d")
                 end_dt = end_dt.replace(hour=23, minute=59, second=59)
                 if settings.USE_TZ and timezone.is_naive(end_dt):
                     end_dt = timezone.make_aware(end_dt, timezone.get_default_timezone())
             except ValueError:
                 pass
         
-        cache_key = f'print_tree_{start_date}_{end_date}'
+        # Если после парсинга даты все еще None (ошибка парсинга),
+        # используем значения по умолчанию
+        if start_dt is None or end_dt is None:
+            today = timezone.now().date()
+            default_start = date(today.year, today.month, 1)
+            default_end = today
+            start_dt = timezone.make_aware(datetime.combine(default_start, time.min))
+            end_dt = timezone.make_aware(datetime.combine(default_end, time.max))
+            start_date_str = default_start.strftime("%Y-%m-%d")
+            end_date_str = default_end.strftime("%Y-%m-%d")
+        
+        cache_key = f'print_tree_{start_date_str}_{end_date_str}'
         tree_data = cache.get(cache_key)
         if tree_data is None:
             # Передаем реальные даты в сервис для фильтрации
@@ -173,11 +196,15 @@ class PrintTreeView(TemplateView):
                 'tree': sorted_tree,
                 'total_pages': total_pages
             }
-            cache.set(cache_key, tree_data, 300)
+            # Для периодов, которые уже закончились, кэшируем дольше
+            cache_timeout = 300  # 5 минут по умолчанию
+            if end_dt and end_dt.date() < date.today():
+                cache_timeout = 3600 * 24  # 24 часа для прошлых периодов
+            cache.set(cache_key, tree_data, cache_timeout)
         context.update(tree_data)
         context.update({
-            'start_date': start_date,
-            'end_date': end_date
+            'start_date': start_date_str,
+            'end_date': end_date_str
         })
         return context
 

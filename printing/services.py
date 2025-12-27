@@ -326,10 +326,16 @@ def get_statistics_data(start_date: Any | None, end_date: Any | None) -> dict[st
         "printer__model",
         "user",
     )
-    if start_date:
-        query = query.filter(timestamp__gte=start_date)
-    if end_date:
-        query = query.filter(timestamp__lte=end_date)
+    
+    # ОБЯЗАТЕЛЬНАЯ фильтрация по датам для производительности
+    # Если даты не указаны, используем текущий месяц по умолчанию
+    now = timezone.now()
+    if start_date is None:
+        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if end_date is None:
+        end_date = now
+    
+    query = query.filter(timestamp__gte=start_date, timestamp__lte=end_date)
 
     results = (
         query.values(

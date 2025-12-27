@@ -7,7 +7,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.db.models import Count, Max, Sum
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+from django.http import QueryDict
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View

@@ -56,19 +56,26 @@ class PrintEventsView(LoginRequiredMixin, SingleTableMixin, FilterView):
             # Создаем копию, чтобы не изменять оригинал
             data = kwargs['data'].copy() if hasattr(kwargs['data'], 'copy') else dict(kwargs['data'])
         
-        # Проверяем наличие параметров дат
+        # Проверяем наличие параметров дат (DateFromToRangeFilter использует timestamp_after и timestamp_before)
         timestamp_after = data.get('timestamp_after', '').strip() if isinstance(data.get('timestamp_after'), str) else ''
         timestamp_before = data.get('timestamp_before', '').strip() if isinstance(data.get('timestamp_before'), str) else ''
         
-        if not timestamp_after or not timestamp_before:
+        # Если оба параметра отсутствуют, устанавливаем значения по умолчанию
+        if not timestamp_after and not timestamp_before:
             today = date.today()
             default_start = date(today.year, today.month, 1)
             default_end = today
             
-            if not timestamp_after:
-                data['timestamp_after'] = default_start.strftime("%Y-%m-%d")
-            if not timestamp_before:
-                data['timestamp_before'] = default_end.strftime("%Y-%m-%d")
+            data['timestamp_after'] = default_start.strftime("%Y-%m-%d")
+            data['timestamp_before'] = default_end.strftime("%Y-%m-%d")
+        # Если указан только один параметр, устанавливаем второй по умолчанию
+        elif not timestamp_after:
+            today = date.today()
+            default_start = date(today.year, today.month, 1)
+            data['timestamp_after'] = default_start.strftime("%Y-%m-%d")
+        elif not timestamp_before:
+            today = date.today()
+            data['timestamp_before'] = today.strftime("%Y-%m-%d")
         
         kwargs['data'] = data
         return kwargs

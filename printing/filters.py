@@ -17,19 +17,6 @@ class PrintEventFilter(django_filters.FilterSet):
         label='Отдел',
         widget=forms.Select(attrs={'class': 'form-control'})
     )
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Переопределяем поле для отображения только названия отдела
-        if 'user__department' in self.form.fields:
-            field = self.form.fields['user__department']
-            # Создаем новый виджет с кастомным методом label_from_instance
-            original_label_from_instance = field.label_from_instance
-            
-            def label_from_instance(obj):
-                return obj.name
-            
-            field.label_from_instance = label_from_instance
     printer = django_filters.ModelChoiceFilter(
         queryset=Printer.objects.all(),
         widget=forms.Select(attrs={'class': 'form-control'})
@@ -38,6 +25,17 @@ class PrintEventFilter(django_filters.FilterSet):
         queryset=Computer.objects.all(),
         widget=forms.Select(attrs={'class': 'form-control'})
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Переопределяем поле для отображения только названия отдела
+        if 'user__department' in self.form.fields:
+            field = self.form.fields['user__department']
+            # Переопределяем метод label_from_instance для отображения только названия
+            def label_from_instance(obj):
+                return obj.name
+            
+            field.label_from_instance = label_from_instance
 
     class Meta:
         model = PrintEvent

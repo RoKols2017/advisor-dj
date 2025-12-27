@@ -45,12 +45,12 @@ class PrintEventsView(LoginRequiredMixin, SingleTableMixin, FilterView):
 
     def get(self, request, *args, **kwargs):
         """Перехватываем GET-запрос для установки дат по умолчанию."""
-        # Проверяем наличие параметров дат
-        timestamp_after = request.GET.get('timestamp_after', '').strip()
-        timestamp_before = request.GET.get('timestamp_before', '').strip()
+        # Проверяем наличие параметров дат (DateFromToRangeFilter использует timestamp_min и timestamp_max)
+        timestamp_min = request.GET.get('timestamp_min', '').strip()
+        timestamp_max = request.GET.get('timestamp_max', '').strip()
         
         # Если оба параметра отсутствуют, делаем редирект с датами по умолчанию
-        if not timestamp_after and not timestamp_before:
+        if not timestamp_min and not timestamp_max:
             today = date.today()
             default_start = date(today.year, today.month, 1)
             default_end = today
@@ -59,22 +59,22 @@ class PrintEventsView(LoginRequiredMixin, SingleTableMixin, FilterView):
             from django.http import QueryDict
             q = QueryDict(mutable=True)
             q.update(request.GET)
-            q['timestamp_after'] = default_start.strftime("%Y-%m-%d")
-            q['timestamp_before'] = default_end.strftime("%Y-%m-%d")
+            q['timestamp_min'] = default_start.strftime("%Y-%m-%d")
+            q['timestamp_max'] = default_end.strftime("%Y-%m-%d")
             return redirect(f"{request.path}?{q.urlencode()}")
         
         # Если указан только один параметр, добавляем второй
-        if not timestamp_after or not timestamp_before:
+        if not timestamp_min or not timestamp_max:
             from django.shortcuts import redirect
             from django.http import QueryDict
             q = QueryDict(mutable=True)
             q.update(request.GET)
             today = date.today()
-            if not timestamp_after:
+            if not timestamp_min:
                 default_start = date(today.year, today.month, 1)
-                q['timestamp_after'] = default_start.strftime("%Y-%m-%d")
-            if not timestamp_before:
-                q['timestamp_before'] = today.strftime("%Y-%m-%d")
+                q['timestamp_min'] = default_start.strftime("%Y-%m-%d")
+            if not timestamp_max:
+                q['timestamp_max'] = today.strftime("%Y-%m-%d")
             return redirect(f"{request.path}?{q.urlencode()}")
         
         return super().get(request, *args, **kwargs)

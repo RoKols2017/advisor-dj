@@ -56,8 +56,6 @@ class PrintEventsView(LoginRequiredMixin, SingleTableMixin, FilterView):
             default_start = date(today.year, today.month, 1)
             default_end = today
             
-            from django.shortcuts import redirect
-            from django.http import QueryDict
             q = QueryDict(mutable=True)
             q.update(request.GET)
             q['timestamp_min'] = default_start.strftime("%Y-%m-%d")
@@ -66,8 +64,6 @@ class PrintEventsView(LoginRequiredMixin, SingleTableMixin, FilterView):
         
         # Если указан только один параметр, добавляем второй
         if not timestamp_min or not timestamp_max:
-            from django.shortcuts import redirect
-            from django.http import QueryDict
             q = QueryDict(mutable=True)
             q.update(request.GET)
             today = date.today()

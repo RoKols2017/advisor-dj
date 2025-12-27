@@ -6,6 +6,25 @@
 {% block content %}
 <div class="container py-4">
     <h1 class="h2 mb-4">Статистика</h1>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Период с</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">по</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">Фильтровать</button>
+                    <a href="{% url 'printing:statistics' %}" class="btn btn-outline-secondary">Сброс</a>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div class="row">
         <div class="col-md-6 mb-4">

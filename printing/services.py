@@ -12,7 +12,7 @@ from typing import Any
 from django.db import transaction
 from django.utils import timezone
 from django.core.cache import cache
-from django.db.models import Sum, Count, Max
+from django.db.models import Sum, Count, Max, Q
 from django.db.models.functions import TruncDate
 
 from accounts.models import User
@@ -290,35 +290,98 @@ def get_statistics_data(start_date: Any | None, end_date: Any | None) -> dict[st
     from .models import PrintEvent, Department  # local import
     from accounts.models import User  # local import
 
+    # ОБЯЗАТЕЛЬНАЯ фильтрация по датам для производительности
+    # Если даты не указаны, используем текущий месяц по умолчанию
+    now = timezone.now()
+    if start_date is None:
+        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if end_date is None:
+        end_date = now
+
     # Departments (cached aggregate)
-    department_cache_key = "department_stats_top"
+    # Фильтруем только отделы с ненулевыми значениями
+    # Кэш учитывает период дат
+    date_suffix = f"_{start_date.date()}_{end_date.date()}"
+    department_cache_key = f"department_stats_top{date_suffix}"
     department_stats = cache.get(department_cache_key)
     if department_stats is None:
+        # Фильтруем события по датам через related events
+        # Используем фильтрацию в annotate для правильного подсчета
         department_stats = (
-            Department.objects.annotate(
-                total_pages=Sum("users__print_events__pages"),
-                total_documents=Count("users__print_events"),
-                total_size=Sum("users__print_events__byte_size"),
+            Department.objects
+            .annotate(
+                total_pages=Sum(
+                    "users__print_events__pages",
+                    filter=Q(
+                        users__print_events__timestamp__gte=start_date,
+                        users__print_events__timestamp__lte=end_date
+                    )
+                ),
+                total_documents=Count(
+                    "users__print_events",
+                    filter=Q(
+                        users__print_events__timestamp__gte=start_date,
+                        users__print_events__timestamp__lte=end_date
+                    ),
+                    distinct=True
+                ),
+                total_size=Sum(
+                    "users__print_events__byte_size",
+                    filter=Q(
+                        users__print_events__timestamp__gte=start_date,
+                        users__print_events__timestamp__lte=end_date
+                    )
+                ),
             )
+            .filter(total_pages__gt=0)
             .order_by("-total_pages")
             .all()
         )
-        cache.set(department_cache_key, department_stats, 300)
+        cache_timeout = 300  # 5 минут по умолчанию
+        if end_date.date() < timezone.now().date():
+            cache_timeout = 3600 * 24  # 24 часа для прошлых периодов
+        cache.set(department_cache_key, department_stats, cache_timeout)
 
     # Top users
-    user_cache_key = "user_stats_top10"
+    # Фильтруем только пользователей с ненулевыми значениями
+    # Кэш учитывает период дат
+    date_suffix = f"_{start_date.date()}_{end_date.date()}"
+    user_cache_key = f"user_stats_top10{date_suffix}"
     user_stats = cache.get(user_cache_key)
     if user_stats is None:
         user_stats = (
             User.objects.select_related("department")
             .annotate(
-                total_pages=Sum("print_events__pages"),
-                total_documents=Count("print_events"),
-                total_size=Sum("print_events__byte_size"),
+                total_pages=Sum(
+                    "print_events__pages",
+                    filter=Q(
+                        print_events__timestamp__gte=start_date,
+                        print_events__timestamp__lte=end_date
+                    )
+                ),
+                total_documents=Count(
+                    "print_events",
+                    filter=Q(
+                        print_events__timestamp__gte=start_date,
+                        print_events__timestamp__lte=end_date
+                    ),
+                    distinct=True
+                ),
+                total_size=Sum(
+                    "print_events__byte_size",
+                    filter=Q(
+                        print_events__timestamp__gte=start_date,
+                        print_events__timestamp__lte=end_date
+                    )
+                ),
             )
+            .filter(total_pages__gt=0)
             .order_by("-total_pages")[:10]
         )
-        cache.set(user_cache_key, list(user_stats), 300)
+        cache_timeout = 300  # 5 минут по умолчанию
+        if end_date.date() < timezone.now().date():
+            cache_timeout = 3600 * 24  # 24 часа для прошлых периодов
+        cache.set(user_cache_key, list(user_stats), cache_timeout)
 
     # Print tree
     query = PrintEvent.objects.select_related(

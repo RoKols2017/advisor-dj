@@ -4,12 +4,6 @@ from django import forms
 from .models import Computer, Department, Printer, PrintEvent
 
 
-class DepartmentChoiceField(forms.ModelChoiceField):
-    """Кастомное поле для выбора отдела с отображением только названия."""
-    def label_from_instance(self, obj):
-        return obj.name
-
-
 class PrintEventFilter(django_filters.FilterSet):
     timestamp = django_filters.DateFromToRangeFilter(
         widget=django_filters.widgets.RangeWidget(attrs={'class': 'form-control', 'type': 'date'})
@@ -21,9 +15,21 @@ class PrintEventFilter(django_filters.FilterSet):
     user__department = django_filters.ModelChoiceFilter(
         queryset=Department.objects.all().order_by('name'),
         label='Отдел',
-        widget=forms.Select(attrs={'class': 'form-control'}),
-        field_class=DepartmentChoiceField
+        widget=forms.Select(attrs={'class': 'form-control'})
     )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Переопределяем поле для отображения только названия отдела
+        if 'user__department' in self.form.fields:
+            field = self.form.fields['user__department']
+            # Создаем новый виджет с кастомным методом label_from_instance
+            original_label_from_instance = field.label_from_instance
+            
+            def label_from_instance(obj):
+                return obj.name
+            
+            field.label_from_instance = label_from_instance
     printer = django_filters.ModelChoiceFilter(
         queryset=Printer.objects.all(),
         widget=forms.Select(attrs={'class': 'form-control'})

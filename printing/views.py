@@ -43,42 +43,41 @@ class PrintEventsView(LoginRequiredMixin, SingleTableMixin, FilterView):
     filterset_class = PrintEventFilter
     paginate_by = 50
 
-    def get_filterset_kwargs(self, filterset_class):
-        """Устанавливает даты по умолчанию, если они не указаны в запросе."""
-        kwargs = super().get_filterset_kwargs(filterset_class)
+    def get(self, request, *args, **kwargs):
+        """Перехватываем GET-запрос для установки дат по умолчанию."""
+        # Проверяем наличие параметров дат
+        timestamp_after = request.GET.get('timestamp_after', '').strip()
+        timestamp_before = request.GET.get('timestamp_before', '').strip()
         
-        # Если даты не указаны, устанавливаем по умолчанию:
-        # с первого числа текущего месяца до сегодня
-        # Получаем данные из request.GET или из kwargs
-        if kwargs.get('data') is None:
-            data = self.request.GET.copy()
-        else:
-            # Создаем копию, чтобы не изменять оригинал
-            data = kwargs['data'].copy() if hasattr(kwargs['data'], 'copy') else dict(kwargs['data'])
-        
-        # Проверяем наличие параметров дат (DateFromToRangeFilter использует timestamp_after и timestamp_before)
-        timestamp_after = data.get('timestamp_after', '').strip() if isinstance(data.get('timestamp_after'), str) else ''
-        timestamp_before = data.get('timestamp_before', '').strip() if isinstance(data.get('timestamp_before'), str) else ''
-        
-        # Если оба параметра отсутствуют, устанавливаем значения по умолчанию
+        # Если оба параметра отсутствуют, делаем редирект с датами по умолчанию
         if not timestamp_after and not timestamp_before:
             today = date.today()
             default_start = date(today.year, today.month, 1)
             default_end = today
             
-            data['timestamp_after'] = default_start.strftime("%Y-%m-%d")
-            data['timestamp_before'] = default_end.strftime("%Y-%m-%d")
-        # Если указан только один параметр, устанавливаем второй по умолчанию
-        elif not timestamp_after:
-            today = date.today()
-            default_start = date(today.year, today.month, 1)
-            data['timestamp_after'] = default_start.strftime("%Y-%m-%d")
-        elif not timestamp_before:
-            today = date.today()
-            data['timestamp_before'] = today.strftime("%Y-%m-%d")
+            from django.shortcuts import redirect
+            from django.http import QueryDict
+            q = QueryDict(mutable=True)
+            q.update(request.GET)
+            q['timestamp_after'] = default_start.strftime("%Y-%m-%d")
+            q['timestamp_before'] = default_end.strftime("%Y-%m-%d")
+            return redirect(f"{request.path}?{q.urlencode()}")
         
-        kwargs['data'] = data
-        return kwargs
+        # Если указан только один параметр, добавляем второй
+        if not timestamp_after or not timestamp_before:
+            from django.shortcuts import redirect
+            from django.http import QueryDict
+            q = QueryDict(mutable=True)
+            q.update(request.GET)
+            today = date.today()
+            if not timestamp_after:
+                default_start = date(today.year, today.month, 1)
+                q['timestamp_after'] = default_start.strftime("%Y-%m-%d")
+            if not timestamp_before:
+                q['timestamp_before'] = today.strftime("%Y-%m-%d")
+            return redirect(f"{request.path}?{q.urlencode()}")
+        
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

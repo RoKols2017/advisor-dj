@@ -50,3 +50,4 @@ docker compose logs watcher --tail=10 | grep -E "(Найден|обработа�
 
 
 
+

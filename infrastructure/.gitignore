@@ -1,0 +1,11 @@
+# Сертификаты не должны попадать в git
+certs/server/*.crt
+certs/server/*.key
+certs/server/*.pem
+certs/server/*.cer
+certs/ca/*.crt
+certs/ca/*.cer
+
+# Разрешаем только шаблоны и документацию (если будут)
+!certs/README.md
+

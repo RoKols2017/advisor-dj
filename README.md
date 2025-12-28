@@ -43,12 +43,17 @@ python manage.py runserver 0.0.0.0:8000
 
 ### Архитектура
 
-Приложение состоит из трех сервисов:
-- **web**: Django веб-приложение (порт 8001 по умолчанию)
+Приложение состоит из следующих сервисов:
+- **nginx**: Nginx reverse proxy (единая точка входа, порт 80/443)
+- **web**: Django веб-приложение (доступно через Nginx)
 - **watcher**: Демон мониторинга каталога для автоматического импорта данных
 - **db**: PostgreSQL 15 база данных (порт 5432)
 
 Все сервисы имеют политику автоматического перезапуска (`restart: unless-stopped`).
+
+**Сети Docker:**
+- `reverse-proxy-network` — общая сеть для Nginx и backend-сервисов
+- `advisor-network` — изолированная сеть для сервисов приложения
 
 ### Quick Start with Docker
 ```bash
@@ -66,7 +71,13 @@ cd advisor-dj
 mkdir -p data/{watch,processed,quarantine}
 sudo chmod 777 data/{watch,processed,quarantine}
 
-# Запустить весь стек
+# Создать сеть для reverse proxy (один раз)
+docker network create reverse-proxy-network
+
+# Запустить Nginx reverse proxy
+docker compose -f docker-compose.proxy.yml up -d
+
+# Запустить весь стек приложения
 make up-build
 # или
 docker compose up --build -d
@@ -105,6 +116,7 @@ Watcher автоматически отслеживает каталог `data/w
 
 - **Полная документация**: `docs/DEPLOYMENT_READINESS.md` и `docs/DEPLOYMENT_CHECKLIST.md`
 - **Docker Compose**: `docs/DEPLOY_PLAN.md`
+- **Nginx Reverse Proxy**: `docs/NGINX_REVERSE_PROXY_ARCHITECTURE.md` и `docs/NGINX_REVERSE_PROXY_IMPLEMENTATION.md`
 - **Health Checks**: автоматические проверки всех сервисов
 - **Monitoring**: логи, метрики, smoke-тесты
 - **CI/CD**: GitHub Actions с Docker образами

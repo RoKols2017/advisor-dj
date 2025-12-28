@@ -8,11 +8,21 @@
 ### 1. Конфигурация Docker
 
 - ✅ `docker-compose.yml` - настроен для всех сервисов (web, watcher, db)
+- ✅ `docker-compose.proxy.yml` - Nginx reverse proxy (отдельный файл)
 - ✅ `restart: unless-stopped` - настроен для всех сервисов (автоматический перезапуск)
 - ✅ `Dockerfile` - для web-контейнера
 - ✅ `Dockerfile.watcher` - для watcher-контейнера
 - ✅ Структура каталогов `data/` (watch, processed, quarantine)
+- ✅ `infrastructure/nginx/` - конфигурации Nginx
 - ✅ `advisor-dj.service` - systemd unit файл для автозапуска при старте системы
+
+### 1.1. Nginx Reverse Proxy
+
+- ✅ Nginx работает в отдельном контейнере (порт 80/443)
+- ✅ Единая точка входа для всех сервисов
+- ✅ Модульная структура конфигов (conf.d, snippets)
+- ✅ Поддержка SSL/TLS с сертификатами MS CA (для этапа B)
+- ✅ Заложена поддержка для будущего n8n
 
 ### 2. Переменные окружения
 
@@ -34,7 +44,9 @@
 
 - ✅ `docs/DEPLOYMENT_CHECKLIST.md` - чеклист развертывания
 - ✅ `docs/FILE_WATCHER_SETUP.md` - настройка watcher и прав доступа
-- ✅ `docs/DEPLOYMENT_CHECKLIST.md` - инструкции по развертыванию
+- ✅ `docs/NGINX_REVERSE_PROXY_ARCHITECTURE.md` - архитектура Nginx reverse proxy
+- ✅ `docs/NGINX_REVERSE_PROXY_IMPLEMENTATION.md` - пошаговый план внедрения Nginx
+- ✅ `infrastructure/README.md` - краткая инструкция по инфраструктуре
 - ✅ `README.md` - общая информация о проекте
 
 ## ⚠️ Что нужно сделать на новом сервере
@@ -59,6 +71,20 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 # POSTGRES_PASSWORD (64 символа)
 openssl rand -base64 48
 ```
+
+### 1.1. Настройка Nginx Reverse Proxy
+
+**Для этапа разработки (HTTP-only):**
+```bash
+# Создать сеть (один раз)
+docker network create reverse-proxy-network
+
+# Запустить Nginx
+docker compose -f docker-compose.proxy.yml up -d
+```
+
+**Для production (HTTPS с MS CA сертификатами):**
+См. подробную инструкцию в `docs/NGINX_REVERSE_PROXY_IMPLEMENTATION.md` (Этап B).
 
 ### 2. Права доступа к каталогам
 

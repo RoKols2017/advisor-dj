@@ -10,7 +10,8 @@ owner: "@rom"
 ## 🐳 Docker Services
 
 ### Сервисы
-- **web**: Django + gunicorn + WhiteNoise (порт 8000)
+- **nginx**: Nginx reverse proxy (порт 80/443, единая точка входа)
+- **web**: Django + gunicorn + WhiteNoise (доступно через Nginx)
 - **watcher**: python -m printing.print_events_watcher (демон)
 - **db**: PostgreSQL 15 (порт 5432)
 
@@ -20,7 +21,8 @@ owner: "@rom"
 - `data`: файлы для обработки (watch/, processed/, quarantine/)
 
 ### Networks
-- `advisor-network`: внутренняя сеть для сервисов
+- `reverse-proxy-network`: общая сеть для Nginx и backend-сервисов (external)
+- `advisor-network`: внутренняя сеть для сервисов приложения
 
 ## 🚀 Quick Start
 
@@ -238,7 +240,10 @@ docker compose -f docker-compose.prod.yml ps
 ```
 
 5) Reverse‑proxy и TLS
-- Включить/настроить Nginx/Traefik (TLS, redirect 80→443, HSTS, gzip, `X-Forwarded-*`).
+- ✅ Nginx reverse proxy настроен (`docker-compose.proxy.yml`)
+- ✅ Конфигурации в `infrastructure/nginx/`
+- Для production (Этап B): включить SSL/TLS с сертификатами MS CA
+- См. `docs/NGINX_REVERSE_PROXY_IMPLEMENTATION.md` для подробной инструкции
 - Убедиться, что `SECURE_PROXY_SSL_HEADER` задан и health возвращает 200 по HTTPS через прокси.
 
 6) Watcher и источники данных

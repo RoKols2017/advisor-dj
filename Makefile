@@ -1,5 +1,5 @@
 # Print Advisor - Makefile
-.PHONY: help build up down logs smoke migrate collectstatic clean test lint
+.PHONY: help build up down logs smoke migrate collectstatic clean test lint nginx-setup nginx-up nginx-down nginx-logs nginx-test
 
 # Default target
 help:
@@ -19,6 +19,13 @@ help:
 	@echo "  lint         - Run linting and formatting"
 	@echo "  clean        - Clean up containers and volumes"
 	@echo "  restart      - Restart all services"
+	@echo ""
+	@echo "Nginx Reverse Proxy commands:"
+	@echo "  nginx-setup  - Create reverse-proxy-network (one-time setup)"
+	@echo "  nginx-up     - Start Nginx reverse proxy"
+	@echo "  nginx-down   - Stop Nginx reverse proxy"
+	@echo "  nginx-logs   - Show Nginx logs"
+	@echo "  nginx-test   - Test Nginx configuration"
 
 # Build Docker images
 build:
@@ -92,4 +99,25 @@ status:
 health:
 	@echo "Checking service health..."
 	@docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+
+# Nginx Reverse Proxy commands
+nginx-setup:
+	@echo "Creating reverse-proxy-network..."
+	@docker network create reverse-proxy-network 2>/dev/null || echo "Network already exists"
+
+nginx-up: nginx-setup
+	@echo "Starting Nginx reverse proxy..."
+	@docker compose -f docker-compose.proxy.yml up -d
+	@echo "Nginx started. Access application at http://localhost/"
+
+nginx-down:
+	@echo "Stopping Nginx reverse proxy..."
+	@docker compose -f docker-compose.proxy.yml down
+
+nginx-logs:
+	@docker compose -f docker-compose.proxy.yml logs -f nginx
+
+nginx-test:
+	@echo "Testing Nginx configuration..."
+	@docker compose -f docker-compose.proxy.yml exec nginx nginx -t || echo "Nginx container not running. Start it with 'make nginx-up'"
 

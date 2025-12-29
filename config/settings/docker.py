@@ -9,6 +9,11 @@ SECURE_HSTS_PRELOAD = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
+# Proxy settings (для работы за Nginx reverse proxy, даже в HTTP режиме)
+USE_X_FORWARDED_HOST = True
+# SECURE_PROXY_SSL_HEADER не нужен для HTTP, но можно оставить для будущего HTTPS
+SECURE_PROXY_SSL_HEADER = None
+
 # Allow all hosts for Docker testing
 ALLOWED_HOSTS = ['*']
 

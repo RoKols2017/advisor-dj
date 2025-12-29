@@ -168,3 +168,9 @@ docker-compose.override.yml
 # Data directory (локальные данные для импорта)
 data/
 !data/.gitkeep
+
+# SSL/TLS сертификаты (приватные ключи не должны попадать в Git)
+infrastructure/certs/server/*.key
+infrastructure/certs/ca/*.key
+*.pem
+*.key

@@ -3,6 +3,10 @@ import os
 
 DEBUG = False
 
+# Proxy settings (для работы за Nginx reverse proxy)
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Security headers
 SECURE_SSL_REDIRECT = True
 SECURE_HSTS_SECONDS = 31536000

@@ -192,6 +192,7 @@ advisor-dj/
 - **Эксплуатация**: [docs/RUNBOOK.md](docs/RUNBOOK.md) - операционные задачи
 - **Статус проекта**: [docs/STATUS.md](docs/STATUS.md) - текущий статус и риски
 - **Переменные окружения**: [docs/ENV.md](docs/ENV.md) - описание переменных окружения
+- **SSL/HTTPS**: [docs/WINDOWS_CA_CERTIFICATES.md](docs/WINDOWS_CA_CERTIFICATES.md) - получение и применение сертификатов от Windows Server CA
 
 ### Дополнительная документация
 

@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote_plus
 
 from config.logging import LOGGING as PROJECT_LOGGING
 
@@ -60,19 +60,42 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 def _db_from_env():
+    # Сначала проверяем отдельные переменные окружения (приоритет)
+    postgres_db = os.getenv('POSTGRES_DB')
+    postgres_user = os.getenv('POSTGRES_USER')
+    postgres_password = os.getenv('POSTGRES_PASSWORD')
+    postgres_host = os.getenv('POSTGRES_HOST')
+    postgres_port = os.getenv('POSTGRES_PORT', '5432')
+    
+    if postgres_db and postgres_user:
+        return {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': postgres_db,
+            'USER': postgres_user,
+            'PASSWORD': postgres_password or '',
+            'HOST': postgres_host or 'localhost',
+            'PORT': postgres_port,
+        }
+    
+    # Fallback на DATABASE_URL (для обратной совместимости)
     url = os.getenv('DATABASE_URL')
     if not url:
         return {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
+    
+    # URL-кодирование для правильного парсинга паролей со спецсимволами
+    from urllib.parse import quote_plus, unquote_plus
     parsed = urlparse(url)
     if parsed.scheme.startswith('postgres'):
+        # Декодируем пароль, если он был закодирован
+        password = unquote_plus(parsed.password or '') if parsed.password else ''
         return {
             'ENGINE': 'django.db.backends.postgresql',
             'NAME': parsed.path.lstrip('/'),
             'USER': parsed.username or '',
-            'PASSWORD': parsed.password or '',
+            'PASSWORD': password,
             'HOST': parsed.hostname or 'localhost',
             'PORT': str(parsed.port or '5432'),
         }

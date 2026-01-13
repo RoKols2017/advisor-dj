@@ -1,11 +1,12 @@
 # Print Advisor - Makefile
-.PHONY: help build up down logs smoke migrate collectstatic clean test lint nginx-setup nginx-up nginx-down nginx-logs nginx-test
+.PHONY: help build up down logs smoke migrate collectstatic clean test lint nginx-setup nginx-up nginx-down nginx-logs nginx-test deploy-all
 
 # Default target
 help:
 	@echo "Print Advisor - Available commands:"
 	@echo "  build        - Build Docker images"
 	@echo "  up           - Start all services"
+	@echo "  up-build     - Start all services with build"
 	@echo "  down         - Stop all services"
 	@echo "  logs         - Show logs from all services"
 	@echo "  logs-web     - Show logs from web service"
@@ -19,6 +20,7 @@ help:
 	@echo "  lint         - Run linting and formatting"
 	@echo "  clean        - Clean up containers and volumes"
 	@echo "  restart      - Restart all services"
+	@echo "  deploy-all   - Deploy everything (Nginx + App) with migrations"
 	@echo ""
 	@echo "Nginx Reverse Proxy commands:"
 	@echo "  nginx-setup  - Create reverse-proxy-network (one-time setup)"
@@ -121,3 +123,13 @@ nginx-test:
 	@echo "Testing Nginx configuration..."
 	@docker compose -f docker-compose.proxy.yml exec nginx nginx -t || echo "Nginx container not running. Start it with 'make nginx-up'"
 
+# Deploy everything: Nginx + App + Migrations
+deploy-all: nginx-setup nginx-up build up
+	@echo "Waiting for services to start..."
+	@sleep 30
+	@echo "Running migrations..."
+	@docker compose exec web python manage.py migrate --noinput
+	@echo ""
+	@echo "✅ Deployment complete!"
+	@echo "Access application at: http://localhost/"
+	@echo "Create superuser: make shell (then: python manage.py createsuperuser)"

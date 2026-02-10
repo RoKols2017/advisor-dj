@@ -1,4 +1,10 @@
+import csv
+from io import StringIO
+
 from django import forms
+
+from accounts.services import UserService
+from printing.models import Department
 
 
 class UserImportForm(forms.Form):
@@ -39,3 +45,52 @@ class UserImportForm(forms.Form):
         if not file.name.endswith('.csv'):
             raise forms.ValidationError('Файл должен быть в формате CSV')
         return file
+
+    def process_file(self) -> tuple[int, int, list[str]]:
+        if not hasattr(self, 'cleaned_data') or 'file' not in self.cleaned_data:
+            raise ValueError('Form must be validated before processing')
+
+        uploaded = self.cleaned_data['file']
+        uploaded.seek(0)
+
+        try:
+            content = uploaded.read().decode('utf-8-sig')
+        except UnicodeDecodeError as exc:
+            return 0, 0, [f'Ошибка декодирования CSV: {exc}']
+
+        reader = csv.DictReader(StringIO(content))
+        required_columns = {'username', 'fio', 'department_code'}
+        if not reader.fieldnames or not required_columns.issubset(set(reader.fieldnames)):
+            return 0, 0, [
+                'Неверный формат CSV. Ожидаются колонки: username,fio,department_code'
+            ]
+
+        created = 0
+        updated = 0
+        errors: list[str] = []
+
+        for row_index, row in enumerate(reader, start=2):
+            username = (row.get('username') or '').strip()
+            fio = (row.get('fio') or '').strip()
+            department_code = (row.get('department_code') or '').strip()
+
+            if not username or not department_code:
+                errors.append(f'Строка {row_index}: username и department_code обязательны')
+                continue
+
+            department = Department.objects.filter(code__iexact=department_code).first()
+            if not department:
+                errors.append(f'Строка {row_index}: отдел не найден: {department_code}')
+                continue
+
+            user, was_created = UserService.create_or_update_user(
+                username=username,
+                fio=fio or username,
+                department_code=department.code,
+            )
+            if was_created:
+                created += 1
+            else:
+                updated += 1
+
+        return created, updated, errors

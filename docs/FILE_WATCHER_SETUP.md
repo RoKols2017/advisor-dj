@@ -1,3 +1,12 @@
+---
+title: "Настройка загрузчика файлов (File Watcher)"
+type: guide
+status: draft
+last_verified: "2026-02-10"
+verified_against_commit: "latest"
+owner: "@rom"
+---
+
 # Настройка загрузчика файлов (File Watcher)
 
 ## Обзор

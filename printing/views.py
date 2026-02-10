@@ -428,8 +428,8 @@ def statistics_view(request):
             total=Sum('pages')
         )['total'],
         'department_stats': Department.objects.annotate(
-            event_count=Count('user__printevent'),
-            page_count=Sum('user__printevent__pages')
+            event_count=Count('users__print_events', distinct=True),
+            page_count=Sum('users__print_events__pages')
         )
     }
     return render(request, 'printing/statistics.html', context)

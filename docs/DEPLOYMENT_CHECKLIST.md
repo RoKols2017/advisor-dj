@@ -1,7 +1,10 @@
 ---
 title: "Чеклист развертывания для ЛВС без интернета"
 type: deployment
+status: draft
 date: 2025-01-30
+last_verified: "2026-02-10"
+verified_against_commit: "latest"
 owner: "@rom"
 ---
 

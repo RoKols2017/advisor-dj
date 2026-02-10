@@ -1,3 +1,12 @@
+---
+title: "Руководство по деплою Print Advisor"
+type: guide
+status: draft
+last_verified: "2026-02-10"
+verified_against_commit: "latest"
+owner: "@rom"
+---
+
 # 🚀 Руководство по деплою Print Advisor
 
 ## 🏗️ **Что такое деплой и зачем он нужен?**

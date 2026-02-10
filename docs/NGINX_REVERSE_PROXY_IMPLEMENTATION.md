@@ -1,3 +1,12 @@
+---
+title: "Пошаговый план внедрения Nginx Reverse Proxy"
+type: guide
+status: draft
+last_verified: "2026-02-10"
+verified_against_commit: "latest"
+owner: "@rom"
+---
+
 # Пошаговый план внедрения Nginx Reverse Proxy
 
 ## Этап A: Подготовка (с интернетом)

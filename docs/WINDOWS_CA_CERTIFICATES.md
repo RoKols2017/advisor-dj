@@ -1,7 +1,10 @@
 ---
 title: "Получение и применение SSL сертификатов от Windows Server CA"
 type: guide
+status: draft
 date: 2025-01-12
+last_verified: "2026-02-10"
+verified_against_commit: "latest"
 owner: "@rom"
 ---
 

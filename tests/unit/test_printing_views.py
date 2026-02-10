@@ -1,5 +1,6 @@
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
 from decimal import Decimal
@@ -63,7 +64,13 @@ class PrintingViewsTests(TestCase):
         """Тест страницы событий печати."""
         self.client.login(username='testuser', password='testpass')
         response = self.client.get('/events/')
-        
+
+        # Страница событий редиректит на URL с датами по умолчанию
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('timestamp_min=', response.url)
+        self.assertIn('timestamp_max=', response.url)
+
+        response = self.client.get('/events/', follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'События печати')
 
@@ -113,13 +120,13 @@ class PrintingViewsTests(TestCase):
     def test_import_users_view_post_invalid_file(self):
         """Тест POST запроса с неверным файлом."""
         self.client.login(username='testuser', password='testpass')
-        
-        # Создаем временный файл с неправильным расширением
-        with open('/tmp/test.txt', 'w') as f:
-            f.write('test data')
-        
-        with open('/tmp/test.txt', 'rb') as f:
-            response = self.client.post('/import/users/', {'file': f})
+
+        txt_file = SimpleUploadedFile(
+            'test.txt',
+            b'test data',
+            content_type='text/plain',
+        )
+        response = self.client.post('/import/users/', {'file': txt_file})
         
         # Должен вернуть 200 с ошибкой в контексте
         self.assertEqual(response.status_code, 200)

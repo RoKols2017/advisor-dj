@@ -1,3 +1,12 @@
+---
+title: "Готовность к развертыванию на новом сервере"
+type: guide
+status: draft
+last_verified: "2026-02-10"
+verified_against_commit: "latest"
+owner: "@rom"
+---
+
 # Готовность к развертыванию на новом сервере
 
 **Дата проверки:** 2025-12-23  

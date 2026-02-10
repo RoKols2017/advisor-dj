@@ -9,7 +9,7 @@ owner: "@rom"
 
 # Print Advisor 🖨️
 
-[![CI](https://img.shields.io/badge/ci-passing-brightgreen)](#) [![Coverage](https://img.shields.io/badge/coverage-78%25-brightgreen)](#) [![Status](https://img.shields.io/badge/status-active-brightgreen)](#)
+[![CI](https://img.shields.io/badge/ci-passing-brightgreen)](#) [![Coverage](https://img.shields.io/badge/coverage-see%20CI-blue)](#) [![Status](https://img.shields.io/badge/status-active-brightgreen)](#)
 
 ## 📊 Статус проекта
 
@@ -142,9 +142,9 @@ pytest -m "not slow" -q
 ```
 
 **Пороги покрытия:**
-- Общий проект: ≥ 80% (текущее: 78% ✅)
+- Общий проект: ≥ 80% (актуальное значение смотрите в CI/Codecov)
 - Изменённые файлы: ≥ 85%
-- Всего тестов: 51 (100% проходят)
+- Всего тестов: 51 (локально: 51 passed)
 
 ## 🔄 CI/CD
 

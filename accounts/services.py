@@ -18,7 +18,7 @@ def _normalize_username(username: str) -> str:
 
 
 def _normalize_department_code(code: str) -> str:
-    return (code or "").strip().lower()
+    return (code or "").strip().upper()
 
 
 @dataclass

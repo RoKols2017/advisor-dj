@@ -1,3 +1,12 @@
+---
+title: "Руководство разработчика Print Advisor"
+type: archive
+status: draft
+last_verified: "2026-02-10"
+verified_against_commit: "latest"
+owner: "@rom"
+---
+
 # 🛠️ Руководство разработчика Print Advisor
 
 ## 📚 Содержание

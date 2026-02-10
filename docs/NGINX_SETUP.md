@@ -1,3 +1,12 @@
+---
+title: "Быстрая настройка Nginx Reverse Proxy"
+type: guide
+status: draft
+last_verified: "2026-02-10"
+verified_against_commit: "latest"
+owner: "@rom"
+---
+
 # Быстрая настройка Nginx Reverse Proxy
 
 ## Этап A: HTTP (для разработки и тестирования)

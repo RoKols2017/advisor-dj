@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import logging
 from typing import TYPE_CHECKING
 
@@ -9,7 +10,7 @@ if TYPE_CHECKING:
 from dataclasses import dataclass
 from typing import Any
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.core.cache import cache
 from django.db.models import Sum, Count, Max, Q
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_or_create_ci_department(code: str) -> Department:
-    normalized = (code or "").strip().lower()
+    normalized = (code or "").strip().upper()
     if not normalized:
         raise ValueError("Department code is empty")
     existing = Department.objects.filter(code__iexact=normalized).first()
@@ -106,14 +107,14 @@ def import_users_from_csv_stream(file_bytes) -> dict[str, Any]:
     try:
         decoded = file_bytes.read().decode("utf-8-sig")
         reader = csv.DictReader(decoded.splitlines())
-        with transaction.atomic():
-            for row in reader:
-                try:
-                    username = (row.get("SamAccountName") or "").strip().lower()
-                    fio = (row.get("DisplayName") or "").strip()
-                    dept_code = (row.get("OU") or "").strip().lower()
-                    if not username or not dept_code:
-                        continue
+        for row in reader:
+            try:
+                username = (row.get("SamAccountName") or "").strip().lower()
+                fio = (row.get("DisplayName") or "").strip()
+                dept_code = (row.get("OU") or "").strip()
+                if not username or not dept_code:
+                    continue
+                with transaction.atomic():
                     department = _get_or_create_ci_department(dept_code)
                     user, was_created = User.objects.update_or_create(
                         username=username,
@@ -123,17 +124,21 @@ def import_users_from_csv_stream(file_bytes) -> dict[str, Any]:
                             "is_active": True,
                         },
                     )
-                    if was_created:
-                        created += 1
-                except (ValueError, TypeError, KeyError) as e:
-                    # Обрабатываем ожидаемые ошибки валидации отдельно
-                    msg = f"Row validation error (line {reader.line_num}): {e}"
-                    logger.warning(msg, exc_info=True)
-                    errors.append(msg)
-                except Exception as e:  # noqa: BLE001 - логируем и продолжаем пакет
-                    msg = f"Row processing error (line {reader.line_num}): {e}"
-                    logger.error(msg, exc_info=True)
-                    errors.append(msg)
+                if was_created:
+                    created += 1
+            except (ValueError, TypeError, KeyError) as e:
+                # Обрабатываем ожидаемые ошибки валидации отдельно
+                msg = f"Row validation error (line {reader.line_num}): {e}"
+                logger.warning(msg, exc_info=True)
+                errors.append(msg)
+            except IntegrityError as e:
+                msg = f"Row integrity error (line {reader.line_num}): {e}"
+                logger.warning(msg, exc_info=True)
+                errors.append(msg)
+            except Exception as e:  # noqa: BLE001 - логируем и продолжаем пакет
+                msg = f"Row processing error (line {reader.line_num}): {e}"
+                logger.error(msg, exc_info=True)
+                errors.append(msg)
     except (UnicodeDecodeError, csv.Error) as e:
         # Обрабатываем ошибки чтения файла отдельно
         msg = f"File reading error: {e}"
@@ -157,7 +162,7 @@ def import_print_events(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
     # Получаем все существующие job_id одним запросом для дедупликации
     existing_job_ids = set(
         PrintEvent.objects.filter(
-            job_id__in=[e.get("JobID") or "UNKNOWN" for e in events_list if e.get("JobID")]
+            job_id__in=[(e.get("JobID") or "").strip()[:64] for e in events_list if e.get("JobID")]
         ).values_list("job_id", flat=True)
     )
     
@@ -166,11 +171,14 @@ def import_print_events(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
         batch_end = min(batch_start + BATCH_SIZE, total_events)
         batch_events = events_list[batch_start:batch_end]
         
-        with transaction.atomic():
-            batch_created = 0
-            for event in batch_events:
-                try:
+        batch_created = 0
+        for event in batch_events:
+            try:
+                with transaction.atomic():
                     username = (event.get("Param3") or "").strip().lower()
+                    if not username:
+                        errors.append("Missing username (Param3)")
+                        continue
                     document_name = event.get("Param2", "")
                     document_id = int(event.get("Param1") or 0)
                     byte_size = int(event.get("Param7") or 0)
@@ -179,7 +187,22 @@ def import_print_events(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
                     ts = timezone.datetime.fromtimestamp(timestamp_ms / 1000)
                     if timezone.is_naive(ts):
                         ts = timezone.make_aware(ts, timezone.get_default_timezone())
-                    job_id = event.get("JobID") or "UNKNOWN"
+                    raw_job_id = (event.get("JobID") or "").strip()
+                    if raw_job_id:
+                        job_id = raw_job_id[:64]
+                    else:
+                        surrogate_payload = "|".join(
+                            [
+                                username,
+                                str(document_id),
+                                str(event.get("Param2") or ""),
+                                str(event.get("Param4") or ""),
+                                str(event.get("Param5") or ""),
+                                str(event.get("Param6") or ""),
+                                str(timestamp_ms),
+                            ]
+                        )
+                        job_id = f"AUTO-{hashlib.sha256(surrogate_payload.encode('utf-8')).hexdigest()[:59]}"
 
                     # Проверка на дубликаты через предзагруженный set
                     if job_id in existing_job_ids:
@@ -248,18 +271,22 @@ def import_print_events(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
                         computer=computer,
                         port=port,
                     )
-                    batch_created += 1
-                except (ValueError, TypeError, KeyError) as e:
-                    # Обрабатываем ожидаемые ошибки валидации отдельно
-                    msg = f"Event validation error: {e}"
-                    logger.warning(msg, exc_info=True)
-                    errors.append(msg)
-                except Exception as e:  # noqa: BLE001
-                    # Неожиданные ошибки логируются с полным traceback
-                    msg = f"Event import error: {e}"
-                    logger.error(msg, exc_info=True)
-                    errors.append(msg)
-            created += batch_created
+                batch_created += 1
+            except (ValueError, TypeError, KeyError) as e:
+                # Обрабатываем ожидаемые ошибки валидации отдельно
+                msg = f"Event validation error: {e}"
+                logger.warning(msg, exc_info=True)
+                errors.append(msg)
+            except IntegrityError as e:
+                msg = f"Event integrity error: {e}"
+                logger.warning(msg, exc_info=True)
+                errors.append(msg)
+            except Exception as e:  # noqa: BLE001
+                # Неожиданные ошибки логируются с полным traceback
+                msg = f"Event import error: {e}"
+                logger.error(msg, exc_info=True)
+                errors.append(msg)
+        created += batch_created
     
     return {"created": created, "errors": errors}
 

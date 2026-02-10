@@ -2,7 +2,7 @@
 title: "Deploy Plan (Print Advisor)"
 type: guide
 status: completed
-last_verified: "2025-09-30"
+last_verified: "2026-02-10"
 verified_against_commit: "latest"
 owner: "@rom"
 ---

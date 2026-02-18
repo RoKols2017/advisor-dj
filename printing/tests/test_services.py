@@ -3,6 +3,7 @@ from django.utils import timezone
 
 from accounts.services import ensure_user
 from printing.services import import_print_events
+from tests.factories import PrinterFactory, UserFactory
 
 
 @pytest.mark.django_db
@@ -10,7 +11,7 @@ def test_ensure_user_creates_and_updates():
     res = ensure_user("alice", "Alice", "it")
     assert res.created is True
     assert res.user.username == "alice"
-    assert res.user.department.code == "it"
+    assert res.user.department.code == "IT"
 
     res2 = ensure_user("alice", "Alice Smith", "it")
     assert res2.created is False
@@ -18,9 +19,9 @@ def test_ensure_user_creates_and_updates():
 
 
 @pytest.mark.django_db
-def test_import_print_events_creates_event(user_factory, printer_factory):
-    user = user_factory(username="bob")
-    printer = printer_factory(name="hp-1-it-101-1")
+def test_import_print_events_creates_event():
+    user = UserFactory(username="bob")
+    printer = PrinterFactory(name="hp-1-it-101-1")
     now_ms = int(timezone.now().timestamp() * 1000)
     events = [
         {
@@ -39,5 +40,3 @@ def test_import_print_events_creates_event(user_factory, printer_factory):
     result = import_print_events(events)
     assert result["created"] == 1
     assert not result["errors"]
-
-

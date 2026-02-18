@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 
 from printing.models import Building, Computer, Department, Port, Printer, PrinterModel, PrintEvent
+from tests.factories import PrinterFactory, UserFactory
 
 User = get_user_model()
 
@@ -93,6 +94,26 @@ def print_event(user: User, printer: Printer) -> PrintEvent:
         pages=5,
         byte_size=1024
     )
+
+
+@pytest.fixture
+def user_factory():
+    """Factory fixture for creating users in pytest-style tests."""
+
+    def factory(**kwargs):
+        return UserFactory(**kwargs)
+
+    return factory
+
+
+@pytest.fixture
+def printer_factory():
+    """Factory fixture for creating printers in pytest-style tests."""
+
+    def factory(**kwargs):
+        return PrinterFactory(**kwargs)
+
+    return factory
 
 
 @pytest.fixture

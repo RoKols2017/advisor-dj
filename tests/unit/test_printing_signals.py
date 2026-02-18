@@ -70,9 +70,10 @@ class PrintingSignalsTests(TestCase):
         )
         
         # Устанавливаем тестовые значения в кэш
+        department_cache_key = f'print_stats_{self.user.department_id}'
         cache.set('department_stats_top', 'test_data', 300)
         cache.set('user_stats_top10', 'test_data', 300)
-        cache.set('print_stats_1', 'test_data', 300)
+        cache.set(department_cache_key, 'test_data', 300)
         cache.set('total_print_stats', 'test_data', 300)
         
         # Вызываем функцию сигнала напрямую
@@ -81,7 +82,7 @@ class PrintingSignalsTests(TestCase):
         # Проверяем, что кэш был очищен
         self.assertIsNone(cache.get('department_stats_top'))
         self.assertIsNone(cache.get('user_stats_top10'))
-        self.assertIsNone(cache.get('print_stats_1'))
+        self.assertIsNone(cache.get(department_cache_key))
         self.assertIsNone(cache.get('total_print_stats'))
 
     def test_update_statistics_not_created(self):
@@ -116,10 +117,11 @@ class PrintingSignalsTests(TestCase):
         )
         
         # Устанавливаем различные ключи кэша
+        department_cache_key = f'print_stats_{self.user.department_id}'
         cache_keys = [
             'department_stats_top',
             'user_stats_top10',
-            'print_stats_1',
+            department_cache_key,
             'total_print_stats'
         ]
         

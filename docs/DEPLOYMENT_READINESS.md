@@ -2,7 +2,7 @@
 title: "Готовность к развертыванию на новом сервере"
 type: guide
 status: draft
-last_verified: "2026-02-10"
+last_verified: "2026-02-18"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -23,7 +23,7 @@ owner: "@rom"
 - ✅ `Dockerfile.watcher` - для watcher-контейнера
 - ✅ Структура каталогов `data/` (watch, processed, quarantine)
 - ✅ `infrastructure/nginx/` - конфигурации Nginx
-- ✅ `advisor-dj.service` - systemd unit файл для автозапуска при старте системы
+- ✅ `advisor-dj.service` - шаблон systemd unit файла для автозапуска (перед применением обновите `User/Group/WorkingDirectory` под целевой сервер)
 
 ### 1.1. Nginx Reverse Proxy
 
@@ -287,7 +287,7 @@ sudo systemctl status advisor-dj.service
 docker compose ps
 
 # Проверить health check
-curl http://localhost:8001/health/
+curl http://localhost/health
 
 # Проверить логи
 docker compose logs web
@@ -299,8 +299,8 @@ docker compose logs watcher
 ### Базовая проверка
 
 1. ✅ Все контейнеры в статусе `healthy`
-2. ✅ Health check возвращает 200: `curl http://localhost:8001/health/`
-3. ✅ Веб-интерфейс доступен: `http://<SERVER_IP>:8001`
+2. ✅ Health check возвращает 200: `curl http://localhost/health`
+3. ✅ Веб-интерфейс доступен: `http://<SERVER_IP>/`
 4. ✅ Watcher обрабатывает файлы из `data/watch/`
 
 ### Проверка функциональности
@@ -346,5 +346,3 @@ docker compose logs watcher
 5. Выполнить миграции и создать суперпользователя
 
 После этого приложение будет готово к работе.
-
-

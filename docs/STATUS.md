@@ -23,5 +23,6 @@ owner: "@rom"
   - Отсутствуют DRF/OpenAPI — medium
   - Прод‑оверлей (reverse proxy/TLS) в работе — medium
 - Bugs:
-  - Нет известных
-
+  - Исправлено: подключение `printing.signals` через `PrintingConfig.ready()` и глобальная инвалидация date-specific кэша статистики.
+  - Исправлено: watcher теперь отправляет файл в quarantine при истечении deadline (раньше файл мог оставаться в `watch/`).
+  - Исправлено: Postgres job в CI использует `config.settings.test_postgres` вместо in-memory SQLite.

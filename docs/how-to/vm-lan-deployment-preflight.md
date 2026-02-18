@@ -63,7 +63,8 @@ docker compose exec web python manage.py createsuperuser
 ### 2.2 Базовые проверки
 ```bash
 docker compose ps
-curl http://localhost:8001/health/
+docker compose -f docker-compose.proxy.yml up -d
+curl http://localhost/health
 docker compose logs web --tail=100
 docker compose logs watcher --tail=100
 ```

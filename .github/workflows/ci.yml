@@ -111,7 +111,7 @@ jobs:
           pg_isready -h localhost -p 5432 -U test_user
       - name: Run tests with PostgreSQL
         env:
-          DJANGO_SETTINGS_MODULE: config.settings.test
+          DJANGO_SETTINGS_MODULE: config.settings.test_postgres
           DATABASE_URL: postgres://test_user:test_password@localhost:5432/test_db
         run: |
           python manage.py migrate

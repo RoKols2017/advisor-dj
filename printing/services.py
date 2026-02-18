@@ -30,6 +30,16 @@ from .models import (
 
 logger = logging.getLogger(__name__)
 
+STATS_CACHE_VERSION_KEY = "stats_cache_version"
+
+
+def _get_stats_cache_version() -> int:
+    version = cache.get(STATS_CACHE_VERSION_KEY)
+    if isinstance(version, int) and version > 0:
+        return version
+    cache.set(STATS_CACHE_VERSION_KEY, 1, None)
+    return 1
+
 
 def _get_or_create_ci_department(code: str) -> Department:
     normalized = (code or "").strip().upper()
@@ -328,8 +338,9 @@ def get_statistics_data(start_date: Any | None, end_date: Any | None) -> dict[st
     # Departments (cached aggregate)
     # Фильтруем только отделы с ненулевыми значениями
     # Кэш учитывает период дат
+    cache_version = _get_stats_cache_version()
     date_suffix = f"_{start_date.date()}_{end_date.date()}"
-    department_cache_key = f"department_stats_top{date_suffix}"
+    department_cache_key = f"department_stats_top_v{cache_version}{date_suffix}"
     department_stats = cache.get(department_cache_key)
     if department_stats is None:
         # Фильтруем события по датам через related events
@@ -373,7 +384,7 @@ def get_statistics_data(start_date: Any | None, end_date: Any | None) -> dict[st
     # Фильтруем только пользователей с ненулевыми значениями
     # Кэш учитывает период дат
     date_suffix = f"_{start_date.date()}_{end_date.date()}"
-    user_cache_key = f"user_stats_top10{date_suffix}"
+    user_cache_key = f"user_stats_top10_v{cache_version}{date_suffix}"
     user_stats = cache.get(user_cache_key)
     if user_stats is None:
         user_stats = (
@@ -446,5 +457,4 @@ def get_statistics_data(start_date: Any | None, end_date: Any | None) -> dict[st
         "user_stats": user_stats,
         "tree_results": results,
     }
-
 

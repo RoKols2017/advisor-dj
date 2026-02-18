@@ -2,7 +2,7 @@
 title: "Print Advisor"
 type: project
 status: draft
-last_verified: "2025-12-23"
+last_verified: "2026-02-18"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -89,7 +89,8 @@ docker compose exec web python manage.py migrate
 docker compose exec web python manage.py createsuperuser
 
 # Проверить статус
-make status
+docker compose ps
+docker compose -f docker-compose.proxy.yml ps
 make smoke
 ```
 
@@ -111,6 +112,12 @@ Watcher автоматически отслеживает каталог `data/w
 - **CSV-файлы** → импорт пользователей
 
 Обработанные файлы перемещаются в `data/processed/`, файлы с ошибками — в `data/quarantine/`.
+
+После запуска стека приложение доступно через reverse proxy: `http://localhost/`.
+
+Проверки health:
+- через Nginx (с хоста): `curl http://localhost/health`
+- напрямую внутри web-контейнера: `docker compose exec -T web curl -f -s http://localhost:8000/health/`
 
 ### Production Deployment
 
@@ -206,5 +213,3 @@ advisor-dj/
 ## 📞 Поддержка
 
 - Создайте Issue с описанием проблемы и приложите логи из `logs/`.
-
-

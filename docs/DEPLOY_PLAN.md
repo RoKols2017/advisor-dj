@@ -2,7 +2,7 @@
 title: "Deploy Plan (Print Advisor)"
 type: guide
 status: completed
-last_verified: "2026-02-10"
+last_verified: "2026-02-18"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -39,6 +39,11 @@ cp .env.example .env
 make up-build
 # или
 docker compose up --build -d
+
+# Запустить reverse proxy
+make nginx-up
+# или
+docker compose -f docker-compose.proxy.yml up -d
 
 # Проверить статус
 make status
@@ -92,7 +97,8 @@ make health        # Проверка здоровья
 ## 🏥 Health Checks
 
 ### Web Service
-- **URL**: `http://localhost:8000/health/`
+- **URL (inside container)**: `http://localhost:8000/health/`
+- **Public URL через reverse proxy**: `http://localhost/health`
 - **Check**: HTTP 200 с JSON статусом
 - **Interval**: 30s, timeout: 10s, retries: 3
 
@@ -141,8 +147,11 @@ docker compose logs --tail=100 web
 
 ### Health Status
 ```bash
-# Проверка здоровья
-curl http://localhost:8000/health/
+# Проверка здоровья через reverse proxy
+curl http://localhost/health
+
+# Или напрямую внутри web-контейнера
+docker compose exec -T web curl -f -s http://localhost:8000/health/
 
 # Статус контейнеров
 docker compose ps
@@ -192,8 +201,11 @@ docker compose exec web env | grep DATABASE
 
 #### Health check failures
 ```bash
-# Проверить health endpoint
-curl -v http://localhost:8000/health/
+# Проверить health endpoint через reverse proxy
+curl -v http://localhost/health
+
+# Проверить health внутри web
+docker compose exec -T web curl -v http://localhost:8000/health/
 
 # Проверить процессы в контейнерах
 docker compose exec web ps aux
@@ -235,7 +247,7 @@ docker compose -f docker-compose.prod.yml exec web python manage.py collectstati
 4) Проверки работоспособности
 ```bash
 ./scripts/smoke.sh
-curl -f http://localhost:8000/health/
+curl -f http://localhost/health
 docker compose -f docker-compose.prod.yml ps
 ```
 

@@ -21,7 +21,7 @@
 ### Шаг 1: Генерация .env файла
 
 ```bash
-cd /home/oitroot/project/advisor-dj
+cd /path/to/advisor-dj
 
 # Автоматическая генерация со всеми ключами
 ./scripts/generate_env.sh
@@ -64,7 +64,7 @@ docker compose ps
 ```
 
 **Сервисы:**
-- `advisor-web` - Django веб-приложение (порт 8000)
+- `advisor-web` - Django веб-приложение (внутренний порт 8000, доступ через Nginx)
 - `advisor-watcher` - демон мониторинга файлов
 - `advisor-db` - PostgreSQL 15 (порт 5432)
 
@@ -89,10 +89,10 @@ make smoke
 ./scripts/smoke.sh
 
 # Проверить health check
-curl http://localhost:8000/health/
+curl http://localhost/health
 
 # Проверить логи
-make logs-web
+make logs
 # или
 docker compose logs -f web
 ```
@@ -275,12 +275,12 @@ sudo systemctl start advisor-dj.service
 
 2. ✅ Health check возвращает 200
    ```bash
-   curl http://localhost:8000/health/
+   curl http://localhost/health
    ```
 
 3. ✅ Веб-интерфейс доступен
    ```bash
-   curl http://localhost:8000/
+   curl http://localhost/
    ```
 
 4. ✅ Watcher обрабатывает файлы
@@ -361,4 +361,4 @@ docker compose exec web env | grep DATABASE
 4. `docker compose exec web python manage.py migrate` - миграции
 5. `docker compose exec web python manage.py createsuperuser` - создать админа
 
-После этого приложение будет доступно на `http://localhost:8000` (или через Nginx на порту 80).
+После этого приложение будет доступно на `http://localhost/`.

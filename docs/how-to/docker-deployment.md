@@ -2,7 +2,7 @@
 title: "Docker Deployment"
 type: guide
 status: draft
-last_verified: "2026-02-10"
+last_verified: "2026-02-18"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -24,13 +24,14 @@ owner: "@rom"
 ```bash
 docker compose up -d --build
 docker compose exec web python manage.py migrate --noinput
+docker compose -f docker-compose.proxy.yml up -d
 docker compose ps
 ```
 
 ## Verify
 
 ```bash
-curl -f http://localhost:8000/health/
+curl -f http://localhost/health
 ./scripts/smoke.sh
 ```
 

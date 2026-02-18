@@ -39,7 +39,7 @@ from config.logging import LOGGING
 # Загрузка переменных окружения из .env
 load_dotenv()
 
-os.environ['LOG_FILE_NAME'] = 'print_events_watcher.log'
+os.environ['LOG_FILE_NAME'] = os.getenv('WATCHER_LOG_FILE_NAME', 'print_events_watcher.log')
 QUARANTINE_DIR = os.getenv('PRINT_EVENTS_QUARANTINE_DIR', './quarantine_dir')
 
 WATCH_DIR = os.getenv('PRINT_EVENTS_WATCH_DIR', './watch_dir')
@@ -54,7 +54,7 @@ DEADLINE_SECONDS = int(os.getenv('WATCHER_DEADLINE_SECONDS', '300'))
 # --- Django setup ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
 django.setup()
 
 from printing.importers import import_print_events_from_json, import_users_from_csv
@@ -71,6 +71,23 @@ class PrintEventHandler(FileSystemEventHandler):
     - Перемещает обработанные файлы в PROCESSED_DIR.
     - Логирует все действия и ошибки.
     """
+    def _move_to_quarantine(self, fname: str, reason: str) -> None:
+        try:
+            os.makedirs(QUARANTINE_DIR, exist_ok=True)
+            ts = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+            try:
+                with open(fname, 'rb') as rf:
+                    digest = hashlib.sha256(rf.read()).hexdigest()[:12]
+            except Exception:
+                digest = 'nohash'
+            ext = os.path.splitext(fname)[1].lower()
+            quarantine_name = f'{ts}-{digest}-{reason}{ext}'
+            dest = os.path.join(QUARANTINE_DIR, quarantine_name)
+            shutil.move(fname, dest)
+            logger.error(f'Файл перемещён в quarantine: {dest}')
+        except Exception as qe:
+            logger.error(f'Не удалось переместить в quarantine {fname}: {qe}', exc_info=True)
+
     def _process_file(self, fname: str) -> None:
         """
         Обрабатывает один файл: импортирует данные и перемещает файл.
@@ -83,6 +100,8 @@ class PrintEventHandler(FileSystemEventHandler):
         if ext == '.json':
             logger.info(f'Найден файл: {fname}')
             started_at = datetime.utcnow()
+            processed = False
+            timed_out = False
             for attempt in range(MAX_RETRIES):
                 try:
                     # Чтение и импорт событий печати
@@ -95,6 +114,7 @@ class PrintEventHandler(FileSystemEventHandler):
                     dest = os.path.join(PROCESSED_DIR, os.path.basename(fname))
                     shutil.move(fname, dest)
                     logger.info(f'Файл перемещён в {dest}')
+                    processed = True
                     break
                 except PermissionError as e:
                     delay = min(BACKOFF_BASE * (attempt + 1), BACKOFF_MAX)
@@ -107,29 +127,17 @@ class PrintEventHandler(FileSystemEventHandler):
                 # дедлайн
                 if (datetime.utcnow() - started_at) > timedelta(seconds=DEADLINE_SECONDS):
                     logger.error(f'Дедлайн истёк для {fname} — прекращаю повторы')
+                    timed_out = True
                     break
-            else:
-                try:
-                    os.makedirs(QUARANTINE_DIR, exist_ok=True)
-                    # Имя: {timestamp}-{hash}-{reason}.ext
-                    ts = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
-                    try:
-                        with open(fname, 'rb') as rf:
-                            digest = hashlib.sha256(rf.read()).hexdigest()[:12]
-                    except Exception:
-                        digest = 'nohash'
-                    ext = os.path.splitext(fname)[1].lower()
-                    reason = 'import_error'
-                    quarantine_name = f'{ts}-{digest}-{reason}{ext}'
-                    dest = os.path.join(QUARANTINE_DIR, quarantine_name)
-                    shutil.move(fname, dest)
-                    logger.error(f'Файл перемещён в quarantine: {dest}')
-                except Exception as qe:
-                    logger.error(f'Не удалось переместить в quarantine {fname}: {qe}', exc_info=True)
+            if not processed:
+                reason = 'deadline_exceeded' if timed_out else 'import_error'
+                self._move_to_quarantine(fname, reason)
         # Импорт пользователей AD из CSV
         elif ext == '.csv':
             logger.info(f'Найден CSV-файл пользователей: {fname}')
             started_at = datetime.utcnow()
+            processed = False
+            timed_out = False
             for attempt in range(MAX_RETRIES):
                 try:
                     # Чтение и импорт пользователей
@@ -140,6 +148,7 @@ class PrintEventHandler(FileSystemEventHandler):
                     dest = os.path.join(PROCESSED_DIR, os.path.basename(fname))
                     shutil.move(fname, dest)
                     logger.info(f'CSV-файл перемещён в {dest}')
+                    processed = True
                     break
                 except PermissionError as e:
                     delay = min(BACKOFF_BASE * (attempt + 1), BACKOFF_MAX)
@@ -151,24 +160,11 @@ class PrintEventHandler(FileSystemEventHandler):
                     time.sleep(delay)
                 if (datetime.utcnow() - started_at) > timedelta(seconds=DEADLINE_SECONDS):
                     logger.error(f'Дедлайн истёк для {fname} — прекращаю повторы')
+                    timed_out = True
                     break
-            else:
-                try:
-                    os.makedirs(QUARANTINE_DIR, exist_ok=True)
-                    ts = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
-                    try:
-                        with open(fname, 'rb') as rf:
-                            digest = hashlib.sha256(rf.read()).hexdigest()[:12]
-                    except Exception:
-                        digest = 'nohash'
-                    ext = os.path.splitext(fname)[1].lower()
-                    reason = 'csv_import_error'
-                    quarantine_name = f'{ts}-{digest}-{reason}{ext}'
-                    dest = os.path.join(QUARANTINE_DIR, quarantine_name)
-                    shutil.move(fname, dest)
-                    logger.error(f'CSV-файл перемещён в quarantine: {dest}')
-                except Exception as qe:
-                    logger.error(f'Не удалось переместить CSV в quarantine {fname}: {qe}', exc_info=True)
+            if not processed:
+                reason = 'deadline_exceeded' if timed_out else 'csv_import_error'
+                self._move_to_quarantine(fname, reason)
 
     def on_created(self, event):
         """

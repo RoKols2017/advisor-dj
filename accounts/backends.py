@@ -1,7 +1,12 @@
-import pywintypes
-import win32security
 from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
+
+try:
+    import pywintypes
+    import win32security
+except ImportError:  # pragma: no cover - only for non-Windows runtime
+    pywintypes = None
+    win32security = None
 
 User = get_user_model()
 
@@ -34,6 +39,12 @@ class WindowsAuthBackend(ModelBackend):
         Returns:
             User: Объект пользователя или None
         """
+        if pywintypes is None or win32security is None:
+            return None
+
+        if not username or not password:
+            return None
+
         try:
             # Пробуем получить токен Windows
             token = win32security.LogonUser(
@@ -84,17 +95,9 @@ class WindowsAuthBackend(ModelBackend):
         Returns:
             list: Список групп пользователя
         """
-        try:
-            groups = win32security.GetTokenInformation(
-                win32security.LogonUser(
-                    username,
-                    None,
-                    None,
-                    win32security.LOGON32_LOGON_INTERACTIVE,
-                    win32security.LOGON32_PROVIDER_DEFAULT
-                ),
-                win32security.TokenGroups
-            )
-            return [g.GetName() for g in groups]
-        except Exception:
+        if win32security is None or not username:
             return []
+
+        # Получение групп требует отдельного безопасного канала с credential flow.
+        # Текущий backend используется только для базовой проверки логина.
+        return []

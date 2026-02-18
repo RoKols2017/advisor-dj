@@ -60,8 +60,9 @@ docker info --format '{{.ServerVersion}}'
 ```bash
 docker compose up -d
 docker compose exec web python manage.py migrate
+docker compose -f docker-compose.proxy.yml up -d
 docker compose ps
-curl http://localhost:8001/health/
+curl http://localhost/health
 docker compose logs web --tail=100
 docker compose logs watcher --tail=100
 ```
@@ -82,8 +83,9 @@ docker info --format '{{.ServerVersion}}'
 ```bash
 docker compose up -d
 docker compose exec web python manage.py migrate
+docker compose -f docker-compose.proxy.yml up -d
 docker compose ps
-curl http://localhost:8001/health/
+curl http://localhost/health
 docker compose logs web --tail=100
 docker compose logs watcher --tail=100
 ```

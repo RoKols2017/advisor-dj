@@ -2,7 +2,7 @@
 title: "Руководство по деплою Print Advisor"
 type: guide
 status: draft
-last_verified: "2026-02-10"
+last_verified: "2026-02-18"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -152,13 +152,13 @@ make smoke
 **Что происходит в smoke.sh:**
 1. **Проверка здоровья сервисов:**
    ```bash
-   curl -f http://localhost:8000/health/
+   docker compose exec -T web curl -f -s http://localhost:8000/health/
    ```
 
 2. **Проверка основных страниц:**
    ```bash
-   curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/
-   curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/admin/login/
+   docker compose exec -T web curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/
+   docker compose exec -T web curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/admin/login/
    ```
 
 3. **Проверка Django:**
@@ -220,7 +220,7 @@ docker compose up -d
 ```
 
 ### **Внешние порты:**
-- **8000** — веб-интерфейс (доступен снаружи)
+- **80** — веб-интерфейс через Nginx reverse proxy
 - **5432** — база данных (только внутри Docker)
 
 ---
@@ -273,6 +273,7 @@ make build
 
 # 3. Запуск
 make up
+make nginx-up
 
 # 4. Инициализация
 make migrate

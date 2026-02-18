@@ -12,8 +12,8 @@
 - ✅ `logs/` - каталог для логов приложения
 
 ### 2. Сгенерированы безопасные пароли
-- ✅ **SECRET_KEY**: `b7GRoqLtyhsDXzjPW1QanWkwqk7xKpGllHADQ7M5yRCyohHO7EpSB0oVLB2B3Omi7m4` (67 символов)
-- ✅ **POSTGRES_PASSWORD**: `Lg4DVvuQ78Nvw3oztEr-TCHEz4ZukI_nWwngPb4XGR8t_XUdDFjivnKYPOG1-SMFk_o` (67 символов)
+- ✅ **SECRET_KEY**: сгенерирован (значение скрыто)
+- ✅ **POSTGRES_PASSWORD**: сгенерирован (значение скрыто)
 
 ### 3. Создан .env файл
 - ✅ Все необходимые переменные окружения настроены
@@ -26,29 +26,29 @@
 
 ### 5. Запущены контейнеры
 - ✅ **advisor-db** (PostgreSQL) - статус: `healthy`
-- ✅ **advisor-web** (Django) - статус: `healthy`, порт: `8001`
+- ✅ **advisor-web** (Django) - статус: `healthy`, внутренний порт: `8000`
 - ✅ **advisor-watcher** (мониторинг) - статус: `healthy`
 
 ### 6. Выполнены миграции БД
 - ✅ Все миграции применены успешно (включая новые: `0004_add_unique_job_id`, `0005_add_user_printer_indexes`)
 
 ### 7. Проверена работоспособность
-- ✅ Health check: `http://localhost:8001/health/` - работает
+- ✅ Health check: `http://localhost/health` (через Nginx reverse proxy) - работает
 - ✅ Все сервисы в статусе `healthy`
 
 ## Текущая конфигурация
 
 ### Порты
-- **Web-приложение**: `http://localhost:8001` (порт изменен с 8000, т.к. 8000 занят Portainer)
+- **Web-приложение**: `http://localhost/` (через Nginx reverse proxy)
 - **PostgreSQL**: `localhost:5432`
 
 ### Доступ к приложению
 ```bash
 # Веб-интерфейс
-http://localhost:8001
+http://localhost/
 
 # Админка Django
-http://localhost:8001/admin
+http://localhost/admin
 ```
 
 ### Полезные команды
@@ -137,7 +137,6 @@ Watcher автоматически следит за каталогом `/app/da
 ## Статус: ✅ Готово к работе
 
 Все контейнеры запущены и работают корректно. Приложение готово к использованию!
-
 
 
 

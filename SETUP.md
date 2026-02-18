@@ -61,6 +61,16 @@ docker compose up -d
 sudo docker compose up --build -d
 ```
 
+### Шаг 5.1: Запуск Nginx reverse proxy
+
+```bash
+# С sudo
+sudo docker compose -f docker-compose.proxy.yml up -d
+
+# Или без sudo
+docker compose -f docker-compose.proxy.yml up -d
+```
+
 ### Шаг 6: Выполнение миграций
 
 ```bash
@@ -98,7 +108,7 @@ docker compose exec web python manage.py createsuperuser
 sudo docker compose ps
 
 # Проверка health check
-curl http://localhost:8001/health/
+curl http://localhost/health
 
 # Или запуск smoke тестов
 sudo ./scripts/smoke.sh
@@ -120,9 +130,6 @@ make collectstatic
 
 # Проверка
 make smoke
-
-# Статус
-make status
 ```
 
 ## Проверка установки
@@ -137,7 +144,7 @@ make status
 
 2. **Health check:**
    ```bash
-   curl http://localhost:8001/health/
+   curl http://localhost/health
    ```
    Должен вернуть JSON с `"status": "healthy"`
 
@@ -148,7 +155,7 @@ make status
    ```
 
 4. **Доступ к веб-интерфейсу:**
-   Откройте в браузере: `http://localhost:8001` (или IP адрес из ALLOWED_HOSTS)
+   Откройте в браузере: `http://localhost/` (или IP адрес из ALLOWED_HOSTS через reverse proxy)
 
 ## Решение проблем
 
@@ -171,10 +178,8 @@ sudo docker network create reverse-proxy-network
 
 ### Ошибка "port already in use"
 
-Измените порт в `.env`:
-```env
-WEB_PORT=8002  # вместо 8001
-```
+Если занят порт 80, измените публикацию порта в `docker-compose.proxy.yml`.
+Параметр `WEB_PORT` в `.env` сейчас не используется, пока в `docker-compose.yml` не включён блок `ports` для web.
 
 ### База данных не запускается
 
@@ -193,4 +198,3 @@ sudo docker compose logs db
 2. Настроить автозапуск (см. `advisor-dj.service`)
 3. Настроить бэкапы БД
 4. Настроить мониторинг
-

@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-WEB_URL="http://localhost:8000"
+INTERNAL_WEB_URL="${SMOKE_INTERNAL_WEB_URL:-http://localhost:8000}"
 TIMEOUT=60
 RETRY_INTERVAL=5
 
@@ -27,7 +27,7 @@ wait_for_service() {
     
     local elapsed=0
     while [ $elapsed -lt $timeout ]; do
-        if curl -f -s "$url" > /dev/null 2>&1; then
+        if docker compose exec -T web curl -f -s "$url" > /dev/null 2>&1; then
             echo -e "${GREEN}✅ $service_name is ready!${NC}"
             return 0
         fi
@@ -50,7 +50,7 @@ test_url() {
     echo -e "${YELLOW}🔍 Testing: $description${NC}"
     
     local status_code
-    status_code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+    status_code=$(docker compose exec -T web curl -s -o /dev/null -w "%{http_code}" "$url")
     
     if [ "$status_code" -eq "$expected_status" ]; then
         echo -e "${GREEN}✅ $description - Status: $status_code${NC}"
@@ -82,23 +82,23 @@ main() {
     local failed_tests=0
     
     # Wait for web service to be ready
-    if ! wait_for_service "$WEB_URL/health/" "Web service" $TIMEOUT $RETRY_INTERVAL; then
+    if ! wait_for_service "$INTERNAL_WEB_URL/health/" "Web service" $TIMEOUT $RETRY_INTERVAL; then
         echo -e "${RED}❌ Web service health check failed${NC}"
         exit 1
     fi
     
     # Test health endpoint
-    if ! test_url "$WEB_URL/health/" 200 "Health endpoint"; then
+    if ! test_url "$INTERNAL_WEB_URL/health/" 200 "Health endpoint"; then
         ((failed_tests++))
     fi
     
     # Test main dashboard (should redirect to login)
-    if ! test_url "$WEB_URL/" 302 "Main dashboard (redirect to login)"; then
+    if ! test_url "$INTERNAL_WEB_URL/" 302 "Main dashboard (redirect to login)"; then
         ((failed_tests++))
     fi
     
     # Test admin login page
-    if ! test_url "$WEB_URL/admin/login/" 200 "Admin login page"; then
+    if ! test_url "$INTERNAL_WEB_URL/admin/login/" 200 "Admin login page"; then
         ((failed_tests++))
     fi
     
@@ -148,4 +148,3 @@ main() {
 
 # Run main function
 main "$@"
-

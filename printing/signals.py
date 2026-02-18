@@ -3,6 +3,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .models import PrintEvent
+from .services import STATS_CACHE_VERSION_KEY
 
 
 @receiver(post_save, sender=PrintEvent)
@@ -22,7 +23,13 @@ def update_statistics(sender, instance, created, **kwargs):
     """
     if created:
         # Очищаем кэш статистики
-        cache.delete(f'print_stats_{instance.user.department.id}')
+        if instance.user.department_id is not None:
+            cache.delete(f'print_stats_{instance.user.department_id}')
         cache.delete('total_print_stats')
         cache.delete('department_stats_top')
         cache.delete('user_stats_top10')
+        # Глобальная инвалидация всех date-specific ключей статистики.
+        try:
+            cache.incr(STATS_CACHE_VERSION_KEY)
+        except ValueError:
+            cache.set(STATS_CACHE_VERSION_KEY, 1, None)

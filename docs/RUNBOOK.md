@@ -2,7 +2,7 @@
 title: "Runbook (Print Advisor)"
 type: guide
 status: draft
-last_verified: "2026-02-10"
+last_verified: "2026-02-18"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -35,7 +35,7 @@ docker compose exec web python manage.py collectstatic --noinput
 ## 3) Проверки health/smoke
 
 ```bash
-curl -f http://localhost:8000/health/
+curl -f http://localhost/health
 ./scripts/smoke.sh
 ```
 

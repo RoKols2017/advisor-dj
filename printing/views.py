@@ -145,7 +145,7 @@ class StatisticsView(LoginRequiredMixin, TemplateView):
 
 
 @method_decorator(cache_page(60 * 5), name='dispatch')  # Кэширование на 5 минут
-class PrintTreeView(TemplateView):
+class PrintTreeView(LoginRequiredMixin, TemplateView):
     template_name = 'printing/print_tree.html'
 
     def get_context_data(self, **kwargs):

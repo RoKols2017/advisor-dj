@@ -3,7 +3,7 @@ title: "Чеклист развертывания для ЛВС без инте�
 type: deployment
 status: draft
 date: 2025-01-30
-last_verified: "2026-02-10"
+last_verified: "2026-02-18"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -175,7 +175,8 @@ IMPORT_TOKEN=your-import-token  # Генерировать: openssl rand -hex 32
 ENABLE_WINDOWS_AUTH=0
 
 # Порты
-WEB_PORT=8001
+# Применяется только если включён проброс порта web в docker-compose.yml
+WEB_PORT=8000
 ```
 
 ---
@@ -261,7 +262,7 @@ docker compose logs watcher | tail -20
 
 3. **Проверить доступность веб-интерфейса:**
 ```bash
-curl http://localhost:8000/health/
+curl http://localhost/health
 # Должен вернуть {"status": "healthy", ...}
 ```
 
@@ -375,6 +376,4 @@ watcher:
 - Настроить `.env` файл
 
 **Все остальное уже работает!** 🎉
-
-
 

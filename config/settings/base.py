@@ -9,6 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "insecure-dev-key")
 DEBUG = os.getenv("DEBUG", "0") == "1"
 ALLOWED_HOSTS = [h for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h]
+IMPORT_TOKEN = os.getenv("IMPORT_TOKEN", "")
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -143,4 +144,3 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
 LOGGING = PROJECT_LOGGING
-

@@ -1,4 +1,4 @@
-from django.test import TestCase, Client
+from django.test import Client, TestCase, override_settings
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
@@ -11,12 +11,14 @@ from tests.factories import DepartmentFactory, BuildingFactory, PrinterModelFact
 User = get_user_model()
 
 
+@override_settings(IMPORT_TOKEN='test-import-token')
 class PrintingViewsTests(TestCase):
     """Тесты для views модуля printing."""
 
     def setUp(self):
         """Подготовка тестовых данных."""
         self.client = Client()
+        self.import_headers = {'HTTP_X_IMPORT_TOKEN': 'test-import-token'}
         
         # Создаем пользователя
         self.department = DepartmentFactory(code='IT')
@@ -110,11 +112,17 @@ class PrintingViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_import_users_view_post_no_file(self):
-        """Тест POST запроса без файла."""
+        """Тест POST без токена импорта."""
         self.client.login(username='testuser', password='testpass')
         response = self.client.post('/import/users/')
-        
-        # Должен вернуть 200 с ошибкой в контексте
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_import_users_view_post_no_file_with_token(self):
+        """Тест POST запроса без файла, но с валидным токеном."""
+        self.client.login(username='testuser', password='testpass')
+        response = self.client.post('/import/users/', **self.import_headers)
+
         self.assertEqual(response.status_code, 200)
 
     def test_import_users_view_post_invalid_file(self):
@@ -126,7 +134,7 @@ class PrintingViewsTests(TestCase):
             b'test data',
             content_type='text/plain',
         )
-        response = self.client.post('/import/users/', {'file': txt_file})
+        response = self.client.post('/import/users/', {'file': txt_file}, **self.import_headers)
         
         # Должен вернуть 200 с ошибкой в контексте
         self.assertEqual(response.status_code, 200)
@@ -160,10 +168,23 @@ class PrintingViewsTests(TestCase):
         response = self.client.post(
             '/import/print-events/',
             data=str(events_data),
-            content_type='application/json'
+            content_type='application/json',
+            **self.import_headers,
         )
-        
+
         self.assertEqual(response.status_code, 200)
+
+    def test_import_print_events_view_post_without_token(self):
+        """Тест POST запроса без токена импорта."""
+        self.client.login(username='testuser', password='testpass')
+
+        response = self.client.post(
+            '/import/print-events/',
+            data='[]',
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 403)
 
     def test_user_info_view(self):
         """Тест страницы информации о пользователе."""

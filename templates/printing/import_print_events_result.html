@@ -13,6 +13,11 @@
             <label for="file" class="form-label">JSON файл</label>
             <input type="file" class="form-control" id="file" name="file" accept=".json,application/json" required>
         </div>
+        <div class="mb-3">
+            <label for="import_token" class="form-label">Токен импорта</label>
+            <input type="password" class="form-control" id="import_token" name="import_token" required>
+            <div class="form-text">Можно передать через заголовок <code>X-Import-Token</code>.</div>
+        </div>
         <button type="submit" class="btn btn-primary">Загрузить</button>
     </form>
 

@@ -2,7 +2,7 @@
 title: "ENV Variables Reference"
 type: reference
 status: draft
-last_verified: "2026-02-10"
+last_verified: "2026-02-18"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -34,7 +34,7 @@ owner: "@rom"
 | PRINT_EVENTS_WATCH_DIR | Входная директория | `/app/data/watch`
 | PRINT_EVENTS_PROCESSED_DIR | Успешные файлы | `/app/data/processed`
 | PRINT_EVENTS_QUARANTINE_DIR | Карантин | `/app/data/quarantine`
-| IMPORT_TOKEN | Токен импорта (если нужен) | `change-me`
+| IMPORT_TOKEN | Обязательный токен для POST импортов (`/import/users/`, `/import/print-events/`) | `change-me`
 | ENABLE_WINDOWS_AUTH | Backend Windows-авторизации | `0` (off)
 | WATCHER_MAX_RETRIES | Кол-во повторов обработки файла | `5` |
 | WATCHER_BACKOFF_BASE | База экспоненциальной задержки, сек | `2` |
@@ -76,5 +76,3 @@ owner: "@rom"
 - Проверять, что `DATABASE_URL` не попадает в логи приложения.
 - Минимальные привилегии: отдельный пользователь БД для приложения.
 - Разные пароли/базы в dev/prod; регулярная ротация паролей.
-
-

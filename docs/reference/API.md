@@ -2,7 +2,7 @@
 title: "API Endpoints"
 type: reference
 status: draft
-last_verified: "2026-02-10"
+last_verified: "2026-02-18"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -26,3 +26,10 @@ owner: "@rom"
 - `GET/POST /accounts/login/` — вход
 - `POST /accounts/logout/` — выход
 - `GET /admin/` — Django admin
+
+## Security for import endpoints
+
+- Для `POST /import/users/` и `POST /import/print-events/` обязателен токен импорта.
+- Передача токена: заголовок `X-Import-Token`.
+- Для HTML-форм также допускается поле `import_token` в body.
+- При отсутствии/невалидном токене сервер возвращает `403 Forbidden`.

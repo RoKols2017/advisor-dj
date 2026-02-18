@@ -1,4 +1,5 @@
 import json
+import hmac
 from collections import OrderedDict
 from datetime import date, datetime, time
 
@@ -8,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.db.models import Count, Max, Sum
 from django.shortcuts import redirect, render
-from django.http import QueryDict
+from django.http import HttpResponseForbidden, QueryDict
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -24,6 +25,20 @@ from .services import import_print_events, import_users_from_csv_stream
 from .models import Department, PrintEvent
 from . import services as svc
 from .tables import PrintEventTable
+
+
+def _has_valid_import_token(request) -> bool:
+    expected_token = (getattr(settings, 'IMPORT_TOKEN', '') or '').strip()
+    if not expected_token:
+        return False
+
+    provided_token = (
+        request.headers.get('X-Import-Token')
+        or request.META.get('HTTP_X_IMPORT_TOKEN')
+        or request.POST.get('import_token', '')
+    ).strip()
+
+    return bool(provided_token) and hmac.compare_digest(provided_token, expected_token)
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
@@ -294,6 +309,9 @@ class ImportUsersView(LoginRequiredMixin, View):
         return render(request, 'printing/import_users_result.html', {'result': None})
 
     def post(self, request):
+        if not _has_valid_import_token(request):
+            return HttpResponseForbidden('Invalid or missing import token')
+
         if 'file' not in request.FILES:
             return render(request, 'printing/import_users_result.html', {
                 'result': {'error': 'Файл не найден'}
@@ -319,6 +337,9 @@ class ImportPrintEventsView(LoginRequiredMixin, View):
         return render(request, 'printing/import_print_events_result.html', {'result': None})
 
     def post(self, request):
+        if not _has_valid_import_token(request):
+            return HttpResponseForbidden('Invalid or missing import token')
+
         events = None
         error = None
         # Если multipart/form-data — файл

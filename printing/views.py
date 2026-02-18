@@ -1,5 +1,5 @@
-import json
 import hmac
+import json
 from collections import OrderedDict
 from datetime import date, datetime, time
 
@@ -7,9 +7,9 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
-from django.db.models import Count, Max, Sum
-from django.shortcuts import redirect, render
+from django.db.models import Count, Sum
 from django.http import HttpResponseForbidden, QueryDict
+from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -18,12 +18,10 @@ from django.views.generic import ListView, TemplateView
 from django_filters.views import FilterView
 from django_tables2 import SingleTableMixin
 
-from accounts.models import User  # Исправленный импорт
-
-from .filters import PrintEventFilter
-from .services import import_print_events, import_users_from_csv_stream
-from .models import Department, PrintEvent
 from . import services as svc
+from .filters import PrintEventFilter
+from .models import Department, PrintEvent
+from .services import import_print_events, import_users_from_csv_stream
 from .tables import PrintEventTable
 
 

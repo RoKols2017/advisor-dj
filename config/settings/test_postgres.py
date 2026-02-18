@@ -1,5 +1,5 @@
-from .base import _db_from_env
 from .test import *  # noqa
+from .base import _db_from_env
 
 
 DATABASES = {

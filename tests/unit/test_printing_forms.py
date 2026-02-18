@@ -1,10 +1,7 @@
-import tempfile
-from django.test import TestCase
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.exceptions import ValidationError
+from django.test import TestCase
 
 from printing.forms import UserImportForm
-from printing.models import Department
 from tests.factories import DepartmentFactory
 
 

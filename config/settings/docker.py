@@ -1,3 +1,7 @@
+import os
+
+from config.logging import LOGGING as DOCKER_LOGGING
+
 from .production import *  # noqa
 
 # Override production settings for Docker testing
@@ -18,10 +22,8 @@ SECURE_PROXY_SSL_HEADER = None
 ALLOWED_HOSTS = ['*']
 
 # Use console logging for Docker
-import os
 os.environ['LOG_TO_CONSOLE'] = '1'
 os.environ['LOG_TO_FILE'] = '0'
 
 # Re-import logging config with new environment
-from config.logging import LOGGING as DOCKER_LOGGING
 LOGGING = DOCKER_LOGGING

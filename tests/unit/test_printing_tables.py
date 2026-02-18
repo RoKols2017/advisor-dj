@@ -1,10 +1,18 @@
-from django.test import TestCase
+from datetime import timedelta
 
-from printing.tables import PrintEventTable
+from django.test import TestCase
+from django.utils import timezone
+
 from printing.models import PrintEvent
+from printing.tables import PrintEventTable
 from tests.factories import (
-    DepartmentFactory, BuildingFactory, PrinterModelFactory, 
-    PrinterFactory, UserFactory, PrintEventFactory, ComputerFactory
+    BuildingFactory,
+    ComputerFactory,
+    DepartmentFactory,
+    PrinterFactory,
+    PrinterModelFactory,
+    PrintEventFactory,
+    UserFactory,
 )
 
 
@@ -36,7 +44,7 @@ class PrintEventTableTests(TestCase):
     def test_table_with_data(self):
         """Тест таблицы с данными."""
         # Создаем событие печати
-        event = PrintEventFactory(
+        PrintEventFactory(
             user=self.user,
             printer=self.printer,
             computer=self.computer,
@@ -57,7 +65,7 @@ class PrintEventTableTests(TestCase):
 
     def test_render_byte_size_bytes(self):
         """Тест отображения размера в байтах."""
-        event = PrintEventFactory(
+        PrintEventFactory(
             user=self.user,
             printer=self.printer,
             computer=self.computer,
@@ -72,7 +80,7 @@ class PrintEventTableTests(TestCase):
 
     def test_render_byte_size_kilobytes(self):
         """Тест отображения размера в килобайтах."""
-        event = PrintEventFactory(
+        PrintEventFactory(
             user=self.user,
             printer=self.printer,
             computer=self.computer,
@@ -87,7 +95,7 @@ class PrintEventTableTests(TestCase):
 
     def test_render_byte_size_megabytes(self):
         """Тест отображения размера в мегабайтах."""
-        event = PrintEventFactory(
+        PrintEventFactory(
             user=self.user,
             printer=self.printer,
             computer=self.computer,
@@ -102,18 +110,15 @@ class PrintEventTableTests(TestCase):
 
     def test_table_ordering(self):
         """Тест сортировки таблицы."""
-        from django.utils import timezone
-        from datetime import timedelta
-        
         # Создаем события с разными временными метками
         now = timezone.now()
-        event1 = PrintEventFactory(
+        PrintEventFactory(
             user=self.user,
             printer=self.printer,
             computer=self.computer,
             timestamp=now
         )
-        event2 = PrintEventFactory(
+        PrintEventFactory(
             user=self.user,
             printer=self.printer,
             computer=self.computer,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Optional, Tuple
+from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
@@ -27,7 +27,7 @@ class EnsureUserResult:
     created: bool
 
 
-@transaction.atomic
+@transaction.atomic  # type: ignore[misc]
 def ensure_user(username: str, fio: str | None, department_code: str) -> EnsureUserResult:
     """Создаёт/обновляет пользователя и его отдел по коду (case-insensitive)."""
     uname = _normalize_username(username)
@@ -57,13 +57,13 @@ class UserService:
     """Сервис для операций с пользователями."""
 
     @staticmethod
-    @transaction.atomic
+    @transaction.atomic  # type: ignore[misc]
     def create_or_update_user(
         username: str,
         fio: str,
         department_code: str,
         is_active: bool = True,
-    ) -> Tuple[Any, bool]:
+    ) -> tuple[Any, bool]:
         uname = _normalize_username(username)
         if not uname:
             raise ValueError("username is required")
@@ -88,7 +88,7 @@ class UserService:
         return user, created
 
     @staticmethod
-    def get_user_by_username(username: str) -> Optional[Any]:
+    def get_user_by_username(username: str) -> Any | None:
         uname = _normalize_username(username)
         if not uname:
             return None
@@ -105,5 +105,3 @@ def get_or_create_user_by_username(
     if user:
         return user
     return User.objects.create(username=uname, fio=fio or uname, is_active=is_active)
-
-

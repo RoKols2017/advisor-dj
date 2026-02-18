@@ -20,6 +20,8 @@ owner: "@rom"
 - `logs`: логи приложения
 - `data`: файлы для обработки (watch/, processed/, quarantine/)
 
+Статика собирается в `staticfiles/` на этапе сборки образа (`collectstatic`) и не должна храниться в Git.
+
 ### Networks
 - `reverse-proxy-network`: общая сеть для Nginx и backend-сервисов (external)
 - `advisor-network`: внутренняя сеть для сервисов приложения

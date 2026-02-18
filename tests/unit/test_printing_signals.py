@@ -1,12 +1,15 @@
-from django.test import TestCase
 from django.core.cache import cache
-from unittest.mock import patch
+from django.test import TestCase
 
 from printing.models import PrintEvent
 from printing.signals import update_statistics
 from tests.factories import (
-    DepartmentFactory, BuildingFactory, PrinterModelFactory, 
-    PrinterFactory, UserFactory, PrintEventFactory
+    BuildingFactory,
+    DepartmentFactory,
+    PrinterFactory,
+    PrinterModelFactory,
+    PrintEventFactory,
+    UserFactory,
 )
 
 
@@ -32,7 +35,7 @@ class PrintingSignalsTests(TestCase):
     def test_update_statistics_on_create(self):
         """Тест обновления статистики при создании события."""
         # Создаем событие печати
-        event = PrintEventFactory(
+        PrintEventFactory(
             user=self.user,
             printer=self.printer,
             pages=5,
@@ -48,7 +51,7 @@ class PrintingSignalsTests(TestCase):
         cache.set('user_stats_top10', 'test_data', 300)
         
         # Создаем новое событие
-        new_event = PrintEventFactory(
+        PrintEventFactory(
             user=self.user,
             printer=self.printer,
             pages=3,

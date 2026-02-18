@@ -1,12 +1,18 @@
-from django.test import Client, TestCase, override_settings
-from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.urls import reverse
-from django.utils import timezone
 from decimal import Decimal
 
-from printing.models import Department, Building, PrinterModel, Printer, PrintEvent
-from tests.factories import DepartmentFactory, BuildingFactory, PrinterModelFactory, PrinterFactory, UserFactory, PrintEventFactory
+from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase, override_settings
+from django.utils import timezone
+
+from tests.factories import (
+    BuildingFactory,
+    DepartmentFactory,
+    PrinterFactory,
+    PrinterModelFactory,
+    PrintEventFactory,
+    UserFactory,
+)
 
 User = get_user_model()
 

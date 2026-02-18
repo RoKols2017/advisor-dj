@@ -1,7 +1,6 @@
 from django.urls import path
 
-from . import views
-from . import health
+from . import health, views
 
 app_name = 'printing'
 
@@ -14,4 +13,4 @@ urlpatterns = [
     path('import/print-events/', views.ImportPrintEventsView.as_view(), name='import_print_events'),
     path('user-info/', views.UserInfoView.as_view(), name='user_info'),
     path('health/', health.health_check, name='health_check'),
-] 
+]

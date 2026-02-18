@@ -5,8 +5,6 @@ build-backend = "setuptools.build_meta"
 [tool.ruff]
 target-version = "py313"
 line-length = 120
-select = ["E", "F", "I", "B", "UP", "C4", "SIM", "TCH"]
-ignore = ["E501", "B008", "B006"]
 exclude = [
     ".git",
     ".venv",
@@ -17,7 +15,11 @@ exclude = [
     ".pytest_cache",
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "C4", "SIM", "TCH"]
+ignore = ["E501", "B008", "B006"]
+
+[tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101", "S106", "S108"]
 "manage.py" = ["T201"]
 
@@ -64,6 +66,33 @@ module = [
     "import_export.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "manage",
+    "config.settings.*",
+    "accounts.admin",
+    "accounts.apps",
+    "accounts.backends",
+    "accounts.migrations.*",
+    "accounts.models",
+    "printing.admin",
+    "printing.apps",
+    "printing.filters",
+    "printing.forms",
+    "printing.health",
+    "printing.importers",
+    "printing.migrations.*",
+    "printing.models.*",
+    "printing.print_events_watcher",
+    "printing.resources",
+    "printing.services",
+    "printing.tables",
+    "printing.tests.*",
+    "printing.views",
+    "tests.*",
+]
+ignore_errors = true
 
 [tool.coverage.run]
 source = ["."]

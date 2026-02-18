@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.core.cache import cache
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -6,8 +8,8 @@ from .models import PrintEvent
 from .services import STATS_CACHE_VERSION_KEY
 
 
-@receiver(post_save, sender=PrintEvent)
-def update_statistics(sender, instance, created, **kwargs):
+@receiver(post_save, sender=PrintEvent)  # type: ignore[misc]
+def update_statistics(sender: type[PrintEvent], instance: PrintEvent, created: bool, **kwargs: Any) -> None:
     """
     Обновляет статистику после создания события печати.
 

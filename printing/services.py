@@ -3,18 +3,17 @@ from __future__ import annotations
 import csv
 import hashlib
 import logging
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-from dataclasses import dataclass
-from typing import Any
 
-from django.db import IntegrityError, transaction
-from django.utils import timezone
 from django.core.cache import cache
-from django.db.models import Sum, Count, Max, Q
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Max, Q, Sum
 from django.db.models.functions import TruncDate
+from django.utils import timezone
 
 from accounts.models import User
 
@@ -324,8 +323,9 @@ def get_dashboard_stats(days: int = 30) -> dict[str, Any]:
 
 
 def get_statistics_data(start_date: Any | None, end_date: Any | None) -> dict[str, Any]:
-    from .models import PrintEvent, Department  # local import
     from accounts.models import User  # local import
+
+    from .models import Department, PrintEvent  # local import
 
     # ОБЯЗАТЕЛЬНАЯ фильтрация по датам для производительности
     # Если даты не указаны, используем текущий месяц по умолчанию
@@ -457,4 +457,3 @@ def get_statistics_data(start_date: Any | None, end_date: Any | None) -> dict[st
         "user_stats": user_stats,
         "tree_results": results,
     }
-

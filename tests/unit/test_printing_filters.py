@@ -1,12 +1,18 @@
+from datetime import timedelta
+
 from django.test import TestCase
 from django.utils import timezone
-from datetime import date, timedelta
 
 from printing.filters import PrintEventFilter
 from printing.models import PrintEvent
 from tests.factories import (
-    DepartmentFactory, BuildingFactory, PrinterModelFactory, 
-    PrinterFactory, UserFactory, PrintEventFactory, ComputerFactory
+    BuildingFactory,
+    ComputerFactory,
+    DepartmentFactory,
+    PrinterFactory,
+    PrinterModelFactory,
+    PrintEventFactory,
+    UserFactory,
 )
 
 

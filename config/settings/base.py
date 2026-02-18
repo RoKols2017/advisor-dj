@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from urllib.parse import urlparse, unquote_plus
+from urllib.parse import unquote_plus, urlparse
 
 from config.logging import LOGGING as PROJECT_LOGGING
 
@@ -86,8 +86,6 @@ def _db_from_env():
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     
-    # URL-кодирование для правильного парсинга паролей со спецсимволами
-    from urllib.parse import quote_plus, unquote_plus
     parsed = urlparse(url)
     if parsed.scheme.startswith('postgres'):
         # Декодируем пароль, если он был закодирован

@@ -16,13 +16,14 @@
     - LOG_TO_FILE, LOG_TO_CONSOLE для управления каналами логирования
 """
 
+import hashlib
+import json
 import logging
 import logging.config
 import os
 import shutil
 import sys
 import time
-import hashlib
 from datetime import datetime, timedelta
 
 import django
@@ -34,7 +35,7 @@ from watchdog.observers import Observer
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
 
-from config.logging import LOGGING
+from config.logging import LOGGING  # noqa: E402
 
 # Загрузка переменных окружения из .env
 load_dotenv()
@@ -57,7 +58,7 @@ sys.path.append(BASE_DIR)
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
 django.setup()
 
-from printing.importers import import_print_events_from_json, import_users_from_csv
+from printing.importers import import_print_events_from_json, import_users_from_csv  # noqa: E402
 
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
@@ -106,7 +107,6 @@ class PrintEventHandler(FileSystemEventHandler):
                 try:
                     # Чтение и импорт событий печати
                     with open(fname, encoding='utf-8-sig') as f:
-                        import json
                         events = json.load(f)
                     result = import_print_events_from_json(events)
                     logger.info(f'Загружено: {result}')

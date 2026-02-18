@@ -1,13 +1,11 @@
-import json
 import tempfile
-import time
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 
-import pytest
 from django.test import TestCase
 
 from printing.importers import import_print_events_from_json, import_users_from_csv
+from tests.factories import BuildingFactory, DepartmentFactory, PrinterFactory, PrinterModelFactory, UserFactory
+
 # ImportService is used indirectly through importers
 
 
@@ -50,17 +48,16 @@ class WatcherIntegrationTests(TestCase):
         ]
         
         # Создаем необходимые объекты
-        from tests.factories import DepartmentFactory, BuildingFactory, PrinterModelFactory, PrinterFactory, UserFactory
         department = DepartmentFactory(code='IT')
         building = BuildingFactory(code='BLD1')
         printer_model = PrinterModelFactory(code='HP400')
-        printer = PrinterFactory(
+        PrinterFactory(
             name='HP400-BLD1-IT-ROOM1-1',
             model=printer_model,
             building=building,
             department=department
         )
-        user = UserFactory(username='testuser', department=department)
+        UserFactory(username='testuser', department=department)
         
         # Тестируем импорт
         result = import_print_events_from_json(events_data)
@@ -119,17 +116,16 @@ class WatcherIntegrationTests(TestCase):
         ]
         
         # Создаем необходимые объекты
-        from tests.factories import DepartmentFactory, BuildingFactory, PrinterModelFactory, PrinterFactory, UserFactory
         department = DepartmentFactory(code='IT')
         building = BuildingFactory(code='BLD1')
         printer_model = PrinterModelFactory(code='HP400')
-        printer = PrinterFactory(
+        PrinterFactory(
             name='HP400-BLD1-IT-ROOM1-1',
             model=printer_model,
             building=building,
             department=department
         )
-        user = UserFactory(username='testuser', department=department)
+        UserFactory(username='testuser', department=department)
         
         # Первый импорт
         result1 = import_print_events_from_json(events_data)

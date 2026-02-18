@@ -234,6 +234,8 @@ docker compose exec web python manage.py migrate
 
 # 6. Настроить автозапуск при старте системы (опционально)
 sudo cp advisor-dj.service /etc/systemd/system/
+# Если проект размещен не в /opt/advisor-dj, обновить WorkingDirectory
+sudo sed -i 's|^WorkingDirectory=.*|WorkingDirectory=/path/to/advisor-dj|' /etc/systemd/system/advisor-dj.service
 sudo systemctl daemon-reload
 sudo systemctl enable advisor-dj.service
 sudo systemctl start advisor-dj.service
@@ -376,4 +378,3 @@ watcher:
 - Настроить `.env` файл
 
 **Все остальное уже работает!** 🎉
-

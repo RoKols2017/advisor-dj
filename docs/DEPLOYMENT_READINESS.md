@@ -265,6 +265,9 @@ docker compose exec web python manage.py createsuperuser
 # Скопировать systemd unit файл
 sudo cp advisor-dj.service /etc/systemd/system/
 
+# Если проект размещен не в /opt/advisor-dj, обновить WorkingDirectory
+sudo sed -i 's|^WorkingDirectory=.*|WorkingDirectory=/path/to/advisor-dj|' /etc/systemd/system/advisor-dj.service
+
 # Перезагрузить конфигурацию systemd
 sudo systemctl daemon-reload
 

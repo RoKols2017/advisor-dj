@@ -7,16 +7,13 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-WorkingDirectory=/home/roman/project/advisor-dj
+WorkingDirectory=/opt/advisor-dj
+ExecStartPre=-/usr/bin/docker network create reverse-proxy-network
 ExecStart=/usr/bin/docker compose up -d
+ExecStart=/usr/bin/docker compose -f docker-compose.proxy.yml up -d
+ExecStop=/usr/bin/docker compose -f docker-compose.proxy.yml down
 ExecStop=/usr/bin/docker compose down
 TimeoutStartSec=0
-User=roman
-Group=roman
 
 [Install]
 WantedBy=multi-user.target
-
-
-
-

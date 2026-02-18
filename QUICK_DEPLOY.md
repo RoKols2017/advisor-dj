@@ -257,6 +257,8 @@ docker compose up -d
 
 ```bash
 sudo cp advisor-dj.service /etc/systemd/system/
+# Если проект размещен не в /opt/advisor-dj, обновить WorkingDirectory
+sudo sed -i 's|^WorkingDirectory=.*|WorkingDirectory=/path/to/advisor-dj|' /etc/systemd/system/advisor-dj.service
 sudo systemctl daemon-reload
 sudo systemctl enable advisor-dj.service
 sudo systemctl start advisor-dj.service

@@ -17,3 +17,4 @@ owner: "@rom"
 - [VM LAN pre-flight status](vm-lan-preflight-status.md) - фактический прогресс и блокеры pre-flight
 - [Production commissioning plan](production-commissioning-plan.md) - рабочий чеклист ввода в эксплуатацию с отметкой выполненных пунктов
 - [Go-live day checklist](go-live-day-checklist.md) - короткий операционный чеклист на день запуска
+- [VM deploy commands](vm-deploy-commands.md) - команды развертывания на VM в двух форматах (с комментариями и без)

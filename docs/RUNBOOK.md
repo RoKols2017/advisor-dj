@@ -12,9 +12,9 @@ owner: "@rom"
 ## 1) Управление стеком
 
 ```bash
-docker compose up -d
-docker compose down
-docker compose ps
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
+docker compose --env-file .env.prod -f docker-compose.prod.yml down
+docker compose --env-file .env.prod -f docker-compose.prod.yml ps
 ```
 
 Для стека с reverse proxy:
@@ -28,21 +28,22 @@ docker compose -f docker-compose.proxy.yml ps
 ## 2) Миграции и статика
 
 ```bash
-docker compose exec web python manage.py migrate --noinput
-docker compose exec web python manage.py collectstatic --noinput
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec web python manage.py migrate --noinput
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec web python manage.py collectstatic --noinput
 ```
 
 ## 3) Проверки health/smoke
 
 ```bash
-curl -f http://localhost/health
-./scripts/smoke.sh
+curl -k -f https://localhost/health/
+SMOKE_COMPOSE_FILE=docker-compose.prod.yml SMOKE_ENV_FILE=.env.prod ./scripts/smoke.sh
+./scripts/check_stack_health.sh
 ```
 
 Если используется reverse proxy:
 
 ```bash
-curl -f http://localhost/health/
+curl -k -f https://localhost/health/
 ```
 
 ## 4) Доступ в админку
@@ -50,7 +51,7 @@ curl -f http://localhost/health/
 Создать суперпользователя:
 
 ```bash
-docker compose exec web python manage.py createsuperuser
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec web python manage.py createsuperuser
 ```
 
 ## 5) Импорт через watcher
@@ -64,21 +65,22 @@ docker compose exec web python manage.py createsuperuser
 
 ```bash
 docker cp ./events.json advisor-watcher:/app/data/watch/
-docker compose logs watcher --tail=200
+docker compose --env-file .env.prod -f docker-compose.prod.yml logs watcher --tail=200
 ```
 
 ## 6) Логи и диагностика
 
 ```bash
-docker compose logs web --tail=200
-docker compose logs watcher --tail=200
-docker compose logs db --tail=200
+docker compose --env-file .env.prod -f docker-compose.prod.yml logs web --tail=200
+docker compose --env-file .env.prod -f docker-compose.prod.yml logs watcher --tail=200
+docker compose --env-file .env.prod -f docker-compose.prod.yml logs db --tail=200
+docker compose -f docker-compose.proxy.yml logs nginx --tail=200
 ```
 
 Проверка Django:
 
 ```bash
-docker compose exec web python manage.py check
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec web python manage.py check --deploy
 ```
 
 ## 7) Бэкап и восстановление БД
@@ -86,23 +88,39 @@ docker compose exec web python manage.py check
 Бэкап:
 
 ```bash
-docker compose exec db pg_dump -U ${POSTGRES_USER:-advisor} ${POSTGRES_DB:-advisor} > backup.sql
+./scripts/backup_db.sh
 ```
 
 Восстановление:
 
 ```bash
-cat backup.sql | docker compose exec -T db psql -U ${POSTGRES_USER:-advisor} ${POSTGRES_DB:-advisor}
+./scripts/restore_db.sh ./backups/advisor-db-YYYYmmdd-HHMMSS.sql.gz
+```
+
+Тестовый restore drill в отдельную БД:
+
+```bash
+DB_USER=$(grep '^POSTGRES_USER=' .env.prod | cut -d'=' -f2-)
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T db psql -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS advisor_restore_test;"
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T db psql -U "$DB_USER" -d postgres -c "CREATE DATABASE advisor_restore_test;"
+./scripts/restore_db.sh ./backups/advisor-db-YYYYmmdd-HHMMSS.sql.gz advisor_restore_test
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T db psql -U "$DB_USER" -d postgres -c "DROP DATABASE advisor_restore_test;"
+```
+
+Расписание backup (cron):
+
+```bash
+crontab infrastructure/cron/advisor-db-backup.cron
 ```
 
 ## 8) Rollback
 
 1. Вернуть предыдущий тег образов в compose.
-2. Перезапустить стек (`docker compose pull && docker compose up -d`).
+2. Перезапустить стек (`docker compose --env-file .env.prod -f docker-compose.prod.yml up -d`).
 3. При необходимости откатить миграцию:
 
 ```bash
-docker compose exec web python manage.py migrate <app_label> <migration_name>
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec web python manage.py migrate <app_label> <migration_name>
 ```
 
 ## 9) Операционный минимум перед релизом

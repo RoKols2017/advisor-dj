@@ -40,28 +40,29 @@ from config.logging import LOGGING  # noqa: E402
 # Загрузка переменных окружения из .env
 load_dotenv()
 
-os.environ['LOG_FILE_NAME'] = os.getenv('WATCHER_LOG_FILE_NAME', 'print_events_watcher.log')
-QUARANTINE_DIR = os.getenv('PRINT_EVENTS_QUARANTINE_DIR', './quarantine_dir')
+os.environ["LOG_FILE_NAME"] = os.getenv("WATCHER_LOG_FILE_NAME", "print_events_watcher.log")
+QUARANTINE_DIR = os.getenv("PRINT_EVENTS_QUARANTINE_DIR", "./quarantine_dir")
 
-WATCH_DIR = os.getenv('PRINT_EVENTS_WATCH_DIR', './watch_dir')
-PROCESSED_DIR = os.getenv('PRINT_EVENTS_PROCESSED_DIR', './processed_dir')
+WATCH_DIR = os.getenv("PRINT_EVENTS_WATCH_DIR", "./watch_dir")
+PROCESSED_DIR = os.getenv("PRINT_EVENTS_PROCESSED_DIR", "./processed_dir")
 
 # Политика повторов/дедлайнов (регулируется через ENV)
-MAX_RETRIES = int(os.getenv('WATCHER_MAX_RETRIES', '5'))
-BACKOFF_BASE = float(os.getenv('WATCHER_BACKOFF_BASE', '2'))  # секунд
-BACKOFF_MAX = float(os.getenv('WATCHER_BACKOFF_MAX', '30'))   # секунд
-DEADLINE_SECONDS = int(os.getenv('WATCHER_DEADLINE_SECONDS', '300'))
+MAX_RETRIES = int(os.getenv("WATCHER_MAX_RETRIES", "5"))
+BACKOFF_BASE = float(os.getenv("WATCHER_BACKOFF_BASE", "2"))  # секунд
+BACKOFF_MAX = float(os.getenv("WATCHER_BACKOFF_MAX", "30"))  # секунд
+DEADLINE_SECONDS = int(os.getenv("WATCHER_DEADLINE_SECONDS", "300"))
 
 # --- Django setup ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
 django.setup()
 
 from printing.importers import import_print_events_from_json, import_users_from_csv  # noqa: E402
 
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
+
 
 class PrintEventHandler(FileSystemEventHandler):
     """
@@ -72,22 +73,23 @@ class PrintEventHandler(FileSystemEventHandler):
     - Перемещает обработанные файлы в PROCESSED_DIR.
     - Логирует все действия и ошибки.
     """
+
     def _move_to_quarantine(self, fname: str, reason: str) -> None:
         try:
             os.makedirs(QUARANTINE_DIR, exist_ok=True)
-            ts = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+            ts = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
             try:
-                with open(fname, 'rb') as rf:
+                with open(fname, "rb") as rf:
                     digest = hashlib.sha256(rf.read()).hexdigest()[:12]
             except Exception:
-                digest = 'nohash'
+                digest = "nohash"
             ext = os.path.splitext(fname)[1].lower()
-            quarantine_name = f'{ts}-{digest}-{reason}{ext}'
+            quarantine_name = f"{ts}-{digest}-{reason}{ext}"
             dest = os.path.join(QUARANTINE_DIR, quarantine_name)
             shutil.move(fname, dest)
-            logger.error(f'Файл перемещён в quarantine: {dest}')
+            logger.error(f"Файл перемещён в quarantine: {dest}")
         except Exception as qe:
-            logger.error(f'Не удалось переместить в quarantine {fname}: {qe}', exc_info=True)
+            logger.error(f"Не удалось переместить в quarantine {fname}: {qe}", exc_info=True)
 
     def _process_file(self, fname: str) -> None:
         """
@@ -98,72 +100,80 @@ class PrintEventHandler(FileSystemEventHandler):
         """
         ext = os.path.splitext(fname)[1].lower()
         # Импорт событий печати из JSON
-        if ext == '.json':
-            logger.info(f'Найден файл: {fname}')
+        if ext == ".json":
+            logger.info(f"Найден файл: {fname}")
             started_at = datetime.utcnow()
             processed = False
             timed_out = False
             for attempt in range(MAX_RETRIES):
                 try:
                     # Чтение и импорт событий печати
-                    with open(fname, encoding='utf-8-sig') as f:
+                    with open(fname, encoding="utf-8-sig") as f:
                         events = json.load(f)
                     result = import_print_events_from_json(events)
-                    logger.info(f'Загружено: {result}')
+                    logger.info(f"Загружено: {result}")
                     # Перемещение файла в каталог обработанных
                     dest = os.path.join(PROCESSED_DIR, os.path.basename(fname))
                     shutil.move(fname, dest)
-                    logger.info(f'Файл перемещён в {dest}')
+                    logger.info(f"Файл перемещён в {dest}")
                     processed = True
                     break
                 except PermissionError as e:
                     delay = min(BACKOFF_BASE * (attempt + 1), BACKOFF_MAX)
-                    logger.warning(f'Permission denied for {fname} (попытка {attempt+1}/{MAX_RETRIES}): {e}; sleep {delay}s')
+                    logger.warning(
+                        f"Permission denied for {fname} (попытка {attempt+1}/{MAX_RETRIES}): {e}; sleep {delay}s"
+                    )
                     time.sleep(delay)
                 except Exception as e:
                     delay = min(BACKOFF_BASE * (attempt + 1), BACKOFF_MAX)
-                    logger.error(f'Ошибка при обработке {fname} (попытка {attempt+1}/{MAX_RETRIES}): {e}', exc_info=True)
+                    logger.error(
+                        f"Ошибка при обработке {fname} (попытка {attempt+1}/{MAX_RETRIES}): {e}", exc_info=True
+                    )
                     time.sleep(delay)
                 # дедлайн
                 if (datetime.utcnow() - started_at) > timedelta(seconds=DEADLINE_SECONDS):
-                    logger.error(f'Дедлайн истёк для {fname} — прекращаю повторы')
+                    logger.error(f"Дедлайн истёк для {fname} — прекращаю повторы")
                     timed_out = True
                     break
             if not processed:
-                reason = 'deadline_exceeded' if timed_out else 'import_error'
+                reason = "deadline_exceeded" if timed_out else "import_error"
                 self._move_to_quarantine(fname, reason)
         # Импорт пользователей AD из CSV
-        elif ext == '.csv':
-            logger.info(f'Найден CSV-файл пользователей: {fname}')
+        elif ext == ".csv":
+            logger.info(f"Найден CSV-файл пользователей: {fname}")
             started_at = datetime.utcnow()
             processed = False
             timed_out = False
             for attempt in range(MAX_RETRIES):
                 try:
                     # Чтение и импорт пользователей
-                    with open(fname, 'rb') as f:
+                    with open(fname, "rb") as f:
                         result = import_users_from_csv(f)
-                    logger.info(f'Импорт пользователей завершён: {result}')
+                    logger.info(f"Импорт пользователей завершён: {result}")
                     # Перемещение файла в каталог обработанных
                     dest = os.path.join(PROCESSED_DIR, os.path.basename(fname))
                     shutil.move(fname, dest)
-                    logger.info(f'CSV-файл перемещён в {dest}')
+                    logger.info(f"CSV-файл перемещён в {dest}")
                     processed = True
                     break
                 except PermissionError as e:
                     delay = min(BACKOFF_BASE * (attempt + 1), BACKOFF_MAX)
-                    logger.warning(f'Permission denied for {fname} (попытка {attempt+1}/{MAX_RETRIES}): {e}; sleep {delay}s')
+                    logger.warning(
+                        f"Permission denied for {fname} (попытка {attempt+1}/{MAX_RETRIES}): {e}; sleep {delay}s"
+                    )
                     time.sleep(delay)
                 except Exception as e:
                     delay = min(BACKOFF_BASE * (attempt + 1), BACKOFF_MAX)
-                    logger.error(f'Ошибка при обработке CSV {fname} (попытка {attempt+1}/{MAX_RETRIES}): {e}', exc_info=True)
+                    logger.error(
+                        f"Ошибка при обработке CSV {fname} (попытка {attempt+1}/{MAX_RETRIES}): {e}", exc_info=True
+                    )
                     time.sleep(delay)
                 if (datetime.utcnow() - started_at) > timedelta(seconds=DEADLINE_SECONDS):
-                    logger.error(f'Дедлайн истёк для {fname} — прекращаю повторы')
+                    logger.error(f"Дедлайн истёк для {fname} — прекращаю повторы")
                     timed_out = True
                     break
             if not processed:
-                reason = 'deadline_exceeded' if timed_out else 'csv_import_error'
+                reason = "deadline_exceeded" if timed_out else "csv_import_error"
                 self._move_to_quarantine(fname, reason)
 
     def on_created(self, event):
@@ -190,7 +200,7 @@ def process_existing_files(watch_dir: str) -> None:
         watch_dir: Каталог для поиска файлов
     """
     if not os.path.exists(watch_dir):
-        logger.warning(f'Каталог {watch_dir} не существует')
+        logger.warning(f"Каталог {watch_dir} не существует")
         return
 
     event_handler = PrintEventHandler()
@@ -203,22 +213,22 @@ def process_existing_files(watch_dir: str) -> None:
             full_path = os.path.join(watch_dir, entry)
             if os.path.isfile(full_path):
                 ext = os.path.splitext(entry)[1].lower()
-                if ext == '.json':
+                if ext == ".json":
                     json_files.append(full_path)
-                elif ext == '.csv':
+                elif ext == ".csv":
                     csv_files.append(full_path)
     except OSError as e:
-        logger.error(f'Ошибка при чтении каталога {watch_dir}: {e}', exc_info=True)
+        logger.error(f"Ошибка при чтении каталога {watch_dir}: {e}", exc_info=True)
         return
 
     total_files = len(json_files) + len(csv_files)
     if total_files > 0:
-        logger.info(f'Найдено существующих файлов для обработки: {len(json_files)} JSON, {len(csv_files)} CSV')
+        logger.info(f"Найдено существующих файлов для обработки: {len(json_files)} JSON, {len(csv_files)} CSV")
         for fname in json_files + csv_files:
-            logger.info(f'Обработка существующего файла: {fname}')
+            logger.info(f"Обработка существующего файла: {fname}")
             event_handler._process_file(fname)
     else:
-        logger.info(f'Существующих файлов для обработки в {watch_dir} не найдено')
+        logger.info(f"Существующих файлов для обработки в {watch_dir} не найдено")
 
 
 if __name__ == "__main__":
@@ -226,21 +236,21 @@ if __name__ == "__main__":
     os.makedirs(PROCESSED_DIR, exist_ok=True)
     os.makedirs(QUARANTINE_DIR, exist_ok=True)
     os.makedirs(WATCH_DIR, exist_ok=True)
-    
+
     # Обрабатываем все существующие файлы при старте
-    logger.info('Обработка существующих файлов при старте...')
+    logger.info("Обработка существующих файлов при старте...")
     process_existing_files(WATCH_DIR)
-    
+
     # Запускаем слежение за новыми файлами
     event_handler = PrintEventHandler()
     observer = Observer()
     # Следим только за WATCH_DIR, без рекурсии
     observer.schedule(event_handler, WATCH_DIR, recursive=False)
     observer.start()
-    logger.info(f'Слежение за новыми файлами в {WATCH_DIR}... (Ctrl+C для выхода)')
+    logger.info(f"Слежение за новыми файлами в {WATCH_DIR}... (Ctrl+C для выхода)")
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
-    observer.join() 
+    observer.join()

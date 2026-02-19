@@ -28,7 +28,7 @@ owner: "@rom"
 - [ ] Есть место на диске под `pgdata`, `logs`, `data/*`.
 
 ### 1.3 Конфиг и секреты
-- [ ] Подготовлен `.env` (не хранить секреты в git).
+- [ ] Подготовлен `.env.prod` (не хранить секреты в git).
 - [ ] Установлены значения: `DEBUG=0`, `ALLOWED_HOSTS`, `SECRET_KEY`, `POSTGRES_PASSWORD`, `IMPORT_TOKEN`.
 - [ ] Принято решение по временному HTTPS: self-signed сертификат.
 
@@ -49,24 +49,24 @@ owner: "@rom"
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
+./scripts/generate_env.sh --production
 ```
 
 При использовании Docker:
 ```bash
-docker compose build
-docker compose up -d
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py createsuperuser
+docker compose -f docker-compose.prod.yml --env-file .env.prod build
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py migrate
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py createsuperuser
 ```
 
 ### 2.2 Базовые проверки
 ```bash
-docker compose ps
+docker compose -f docker-compose.prod.yml --env-file .env.prod ps
 docker compose -f docker-compose.proxy.yml up -d
 curl http://localhost/health
-docker compose logs web --tail=100
-docker compose logs watcher --tail=100
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs web --tail=100
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs watcher --tail=100
 ```
 
 Проверить в UI:
@@ -100,12 +100,12 @@ curl -vk https://<FQDN_OR_IP>/health/
 
 ### 4.1 Зафиксировать релиз
 - [ ] Зафиксирован commit/tag релиза.
-- [ ] Сохранены конфиги (`docker-compose*.yml`, nginx, `.env`) в защищенном месте.
+- [ ] Сохранены конфиги (`docker-compose*.yml`, nginx, `.env.prod`) в защищенном месте.
 
 ### 4.2 Подготовить Docker-образы
 ```bash
-docker compose build
-docker save $(docker compose config --images) -o advisor-dj-images.tar
+docker compose -f docker-compose.prod.yml --env-file .env.prod build
+docker save $(docker compose -f docker-compose.prod.yml --env-file .env.prod config --images) -o advisor-dj-images.tar
 ```
 
 - [ ] Архив образов сохранен на VM и во внешнем безопасном хранилище.
@@ -123,9 +123,9 @@ docker save $(docker compose config --images) -o advisor-dj-images.tar
 
 ### 5.2 Проверка после переключения
 ```bash
-docker compose ps
+docker compose -f docker-compose.prod.yml --env-file .env.prod ps
 curl -k https://<FQDN_OR_IP>/health/
-docker compose logs --tail=100
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs --tail=100
 ```
 
 - [ ] `web`, `db`, `watcher` в состоянии `healthy`.
@@ -149,10 +149,10 @@ No-Go, если:
 
 ## 7. Rollback (кратко)
 
-1. Остановить текущий стек: `docker compose down`.
+1. Остановить текущий стек: `docker compose -f docker-compose.prod.yml --env-file .env.prod down`.
 2. Загрузить предыдущие образы (если нужно): `docker load -i <backup-images.tar>`.
-3. Вернуть предыдущие `docker-compose`/nginx/.env.
-4. Поднять стек: `docker compose up -d`.
+3. Вернуть предыдущие `docker-compose`/nginx/.env.prod.
+4. Поднять стек: `docker compose -f docker-compose.prod.yml --env-file .env.prod up -d`.
 5. При необходимости восстановить БД из последнего валидного backup.
 
 ## 8. Следующий этап (после восстановления MS CA)

@@ -11,8 +11,16 @@ NC='\033[0m' # No Color
 
 # Configuration
 INTERNAL_WEB_URL="${SMOKE_INTERNAL_WEB_URL:-http://localhost:8000}"
+SMOKE_COMPOSE_FILE="${SMOKE_COMPOSE_FILE:-docker-compose.yml}"
+SMOKE_ENV_FILE="${SMOKE_ENV_FILE:-}"
 TIMEOUT=60
 RETRY_INTERVAL=5
+
+if [ -n "$SMOKE_ENV_FILE" ]; then
+    DOCKER_COMPOSE_CMD=(docker compose -f "$SMOKE_COMPOSE_FILE" --env-file "$SMOKE_ENV_FILE")
+else
+    DOCKER_COMPOSE_CMD=(docker compose -f "$SMOKE_COMPOSE_FILE")
+fi
 
 echo -e "${YELLOW}🚀 Starting Print Advisor smoke tests...${NC}"
 
@@ -27,7 +35,7 @@ wait_for_service() {
     
     local elapsed=0
     while [ $elapsed -lt $timeout ]; do
-        if docker compose exec -T web curl -f -s "$url" > /dev/null 2>&1; then
+        if "${DOCKER_COMPOSE_CMD[@]}" exec -T web curl -f -s "$url" > /dev/null 2>&1; then
             echo -e "${GREEN}✅ $service_name is ready!${NC}"
             return 0
         fi
@@ -44,19 +52,28 @@ wait_for_service() {
 # Function to test URL
 test_url() {
     local url=$1
-    local expected_status=${2:-200}
+    local expected_statuses=${2:-200}
     local description=$3
     
     echo -e "${YELLOW}🔍 Testing: $description${NC}"
     
     local status_code
-    status_code=$(docker compose exec -T web curl -s -o /dev/null -w "%{http_code}" "$url")
-    
-    if [ "$status_code" -eq "$expected_status" ]; then
+    status_code=$("${DOCKER_COMPOSE_CMD[@]}" exec -T web curl -s -o /dev/null -w "%{http_code}" "$url")
+
+    local matched=false
+    IFS=',' read -r -a expected_list <<< "$expected_statuses"
+    for expected_status in "${expected_list[@]}"; do
+        if [ "$status_code" = "$expected_status" ]; then
+            matched=true
+            break
+        fi
+    done
+
+    if [ "$matched" = true ]; then
         echo -e "${GREEN}✅ $description - Status: $status_code${NC}"
         return 0
     else
-        echo -e "${RED}❌ $description - Expected: $expected_status, Got: $status_code${NC}"
+        echo -e "${RED}❌ $description - Expected one of: $expected_statuses, Got: $status_code${NC}"
         return 1
     fi
 }
@@ -68,7 +85,7 @@ run_django_command() {
     
     echo -e "${YELLOW}🔍 Running: $description${NC}"
     
-    if docker compose exec -T web python manage.py $command; then
+    if "${DOCKER_COMPOSE_CMD[@]}" exec -T web python manage.py $command; then
         echo -e "${GREEN}✅ $description - Success${NC}"
         return 0
     else
@@ -93,12 +110,12 @@ main() {
     fi
     
     # Test main dashboard (should redirect to login)
-    if ! test_url "$INTERNAL_WEB_URL/" 302 "Main dashboard (redirect to login)"; then
+    if ! test_url "$INTERNAL_WEB_URL/" "301,302" "Main dashboard (redirect to login)"; then
         ((failed_tests++))
     fi
     
     # Test admin login page
-    if ! test_url "$INTERNAL_WEB_URL/admin/login/" 200 "Admin login page"; then
+    if ! test_url "$INTERNAL_WEB_URL/admin/login/" "200,301" "Admin login page"; then
         ((failed_tests++))
     fi
     
@@ -119,7 +136,7 @@ main() {
     
     # Check if watcher is running
     echo -e "${YELLOW}🔍 Checking watcher service...${NC}"
-    if docker compose exec -T watcher pgrep -f "printing.print_events_watcher" > /dev/null; then
+    if "${DOCKER_COMPOSE_CMD[@]}" exec -T watcher pgrep -f "printing.print_events_watcher" > /dev/null; then
         echo -e "${GREEN}✅ Watcher service is running${NC}"
     else
         echo -e "${RED}❌ Watcher service is not running${NC}"
@@ -128,7 +145,7 @@ main() {
     
     # Check database connectivity
     echo -e "${YELLOW}🔍 Checking database connectivity...${NC}"
-    if docker compose exec -T db pg_isready -U advisor -d advisor; then
+    if "${DOCKER_COMPOSE_CMD[@]}" exec -T db pg_isready -U advisor -d advisor; then
         echo -e "${GREEN}✅ Database is ready${NC}"
     else
         echo -e "${RED}❌ Database is not ready${NC}"

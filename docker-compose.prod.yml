@@ -2,17 +2,26 @@ services:
   db:
     image: postgres:15
     container_name: advisor-db
+    env_file: .env.prod
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-advisor}
-      POSTGRES_USER: ${POSTGRES_USER:-advisor}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-advisor}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-advisor} -d ${POSTGRES_DB:-advisor}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?POSTGRES_USER is required} -d ${POSTGRES_DB:?POSTGRES_DB is required}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - advisor-network
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   web:
     build:
@@ -22,11 +31,13 @@ services:
     env_file: .env.prod
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     volumes:
       - logs:/app/logs
       - data:/app/data
@@ -36,7 +47,15 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - advisor-network
+      - reverse-proxy-network
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   watcher:
     build:
@@ -46,6 +65,8 @@ services:
     env_file: .env.prod
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
     depends_on:
       web:
         condition: service_healthy
@@ -60,11 +81,22 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    networks:
+      - advisor-network
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
 volumes:
   pgdata:
   logs:
   data:
 
-
+networks:
+  advisor-network:
+    driver: bridge
+  reverse-proxy-network:
+    external: true

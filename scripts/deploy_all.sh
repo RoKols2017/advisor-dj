@@ -12,13 +12,13 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}=== Развертывание Print Advisor с Nginx Reverse Proxy ===${NC}"
 echo ""
 
-# Проверка .env файла
-if [ ! -f .env ]; then
-    echo -e "${RED}❌ Ошибка: файл .env не найден!${NC}"
-    echo -e "${YELLOW}Выполните: ./scripts/generate_env.sh${NC}"
+# Проверка .env.prod файла
+if [ ! -f .env.prod ]; then
+    echo -e "${RED}❌ Ошибка: файл .env.prod не найден!${NC}"
+    echo -e "${YELLOW}Выполните: ./scripts/generate_env.sh --production${NC}"
     exit 1
 fi
-echo -e "${GREEN}✅ Файл .env найден${NC}"
+echo -e "${GREEN}✅ Файл .env.prod найден${NC}"
 
 # Проверка каталогов
 if [ ! -d "data/watch" ] || [ ! -d "data/processed" ] || [ ! -d "data/quarantine" ]; then
@@ -44,11 +44,11 @@ echo -e "${BLUE}Шаг 2: Запуск Nginx reverse proxy...${NC}"
 docker compose -f docker-compose.proxy.yml up -d
 echo -e "${GREEN}✅ Nginx запущен${NC}"
 
-# Шаг 3: Сборка и запуск основного приложения
+# Шаг 3: Сборка и запуск основного приложения (production compose)
 echo ""
 echo -e "${BLUE}Шаг 3: Сборка и запуск основного приложения...${NC}"
-docker compose build
-docker compose up -d
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
 echo -e "${GREEN}✅ Приложение запущено${NC}"
 
 # Ожидание готовности сервисов
@@ -64,12 +64,12 @@ echo -e "${YELLOW}=== Статус Nginx ===${NC}"
 docker compose -f docker-compose.proxy.yml ps
 echo ""
 echo -e "${YELLOW}=== Статус основного приложения ===${NC}"
-docker compose ps
+docker compose -f docker-compose.prod.yml ps
 
 # Шаг 5: Выполнение миграций
 echo ""
 echo -e "${BLUE}Шаг 5: Выполнение миграций БД...${NC}"
-docker compose exec web python manage.py migrate --noinput
+docker compose -f docker-compose.prod.yml exec web python manage.py migrate --noinput
 echo -e "${GREEN}✅ Миграции выполнены${NC}"
 
 # Шаг 6: Проверка health checks
@@ -95,14 +95,14 @@ echo -e "${GREEN}=== Развертывание завершено! ===${NC}"
 echo ""
 echo -e "${BLUE}Доступ к приложению:${NC}"
 echo -e "  - Через Nginx: ${GREEN}http://localhost/${NC}"
-echo -e "  - Прямой доступ (если порт открыт): ${GREEN}http://localhost:8000/${NC}"
+echo -e "  - Прямой доступ к web в production отключен (доступ только через Nginx)"
 echo ""
 echo -e "${BLUE}Полезные команды:${NC}"
 echo -e "  - Логи Nginx: ${YELLOW}docker compose -f docker-compose.proxy.yml logs -f nginx${NC}"
-echo -e "  - Логи приложения: ${YELLOW}docker compose logs -f web${NC}"
-echo -e "  - Логи watcher: ${YELLOW}docker compose logs -f watcher${NC}"
-echo -e "  - Статус всех сервисов: ${YELLOW}docker compose ps && docker compose -f docker-compose.proxy.yml ps${NC}"
+echo -e "  - Логи приложения: ${YELLOW}docker compose -f docker-compose.prod.yml logs -f web${NC}"
+echo -e "  - Логи watcher: ${YELLOW}docker compose -f docker-compose.prod.yml logs -f watcher${NC}"
+echo -e "  - Статус всех сервисов: ${YELLOW}docker compose -f docker-compose.prod.yml ps && docker compose -f docker-compose.proxy.yml ps${NC}"
 echo ""
 echo -e "${YELLOW}⚠️  Не забудьте создать суперпользователя:${NC}"
-echo -e "  ${BLUE}docker compose exec web python manage.py createsuperuser${NC}"
+echo -e "  ${BLUE}docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser${NC}"
 echo ""

@@ -97,8 +97,8 @@ watcher:
 
 1. **На машине с интернетом:**
 ```bash
-# Собрать образы
-docker compose build
+# Собрать production-образы
+docker compose -f docker-compose.prod.yml --env-file .env.prod build
 
 # Сохранить образы в архив
 docker save \
@@ -116,8 +116,8 @@ scp advisor-dj-images.tar user@target-server:/tmp/
 # Загрузить образы
 docker load -i /tmp/advisor-dj-images.tar
 
-# Запустить композицию
-docker compose up -d
+# Запустить production композицию
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 ```
 
 **Альтернатива:** Использовать Docker Registry в локальной сети (если есть).
@@ -127,11 +127,11 @@ docker compose up -d
 **Рекомендуемый способ:** Использовать скрипт автоматической генерации:
 
 ```bash
-# Автоматическая генерация .env со всеми ключами
-./scripts/generate_env.sh
+# Автоматическая генерация .env.prod со всеми ключами
+./scripts/generate_env.sh --production
 
 # Или интерактивный режим для настройки параметров
-./scripts/generate_env.sh --interactive
+./scripts/generate_env.sh --production --interactive
 
 # С указанием IP адресов сервера
 ./scripts/generate_env.sh --allowed-hosts "192.168.1.100,localhost,127.0.0.1"
@@ -145,7 +145,7 @@ docker compose up -d
 
 **Ручной способ (если скрипт недоступен):**
 
-Создать `.env` файл вручную:
+Создать `.env.prod` файл вручную:
 
 ```bash
 # База данных
@@ -158,7 +158,7 @@ POSTGRES_PORT=5432
 DEBUG=0
 SECRET_KEY=your-very-long-secret-key-here-min-50-chars  # Генерировать через Django
 ALLOWED_HOSTS=your-server-ip,localhost,127.0.0.1
-DJANGO_SETTINGS_MODULE=config.settings.docker
+DJANGO_SETTINGS_MODULE=config.settings.production
 
 # Логи
 LOG_TO_FILE=1
@@ -190,12 +190,12 @@ WEB_PORT=8000
 git clone <repository-url>
 cd advisor-dj
 
-# 2. Собрать образы
-docker compose build
+# 2. Собрать production-образы
+docker compose -f docker-compose.prod.yml --env-file .env.prod build
 
 # 3. Создать архив образов
 docker save \
-  $(docker compose config --images) \
+  $(docker compose -f docker-compose.prod.yml --env-file .env.prod config --images) \
   -o advisor-dj-images.tar
 
 # 4. Скопировать файлы проекта и архив на целевую машину
@@ -218,19 +218,19 @@ sudo mount -t cifs //windows-server/printshare /mnt/printshare \
 # 3. Обновить docker-compose.yml для использования сетевой папки
 # (см. раздел "Монтирование сетевой папки" выше)
 
-# 4. Создать .env файл с настройками
-cp .env.example .env
-nano .env  # Отредактировать значения
+# 4. Создать .env.prod файл с настройками
+cp .env.prod.template .env.prod
+nano .env.prod  # Отредактировать значения
 
 # 5. Создать директории для processed и quarantine
 mkdir -p ./data/processed ./data/quarantine
 chmod 755 ./data/processed ./data/quarantine
 
 # 6. Запустить сервисы
-docker compose up -d
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 
 # 7. Выполнить миграции БД
-docker compose exec web python manage.py migrate
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py migrate
 
 # 6. Настроить автозапуск при старте системы (опционально)
 sudo cp advisor-dj.service /etc/systemd/system/
@@ -241,11 +241,11 @@ sudo systemctl enable advisor-dj.service
 sudo systemctl start advisor-dj.service
 
 # 7. Создать суперпользователя (опционально)
-docker compose exec web python manage.py createsuperuser
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py createsuperuser
 
 # 8. Проверить статус
-docker compose ps
-docker compose logs -f watcher  # Просмотр логов watcher
+docker compose -f docker-compose.prod.yml --env-file .env.prod ps
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs -f watcher  # Просмотр логов watcher
 ```
 
 ### Этап 3: Проверка работы
@@ -258,7 +258,7 @@ docker compose ps
 
 2. **Проверить логи watcher:**
 ```bash
-docker compose logs watcher | tail -20
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs watcher | tail -20
 # Должно быть: "Слежение за /app/data/watch..."
 ```
 
@@ -272,7 +272,7 @@ curl http://localhost/health
    - Скопировать тестовый JSON-файл с событиями в `/mnt/printshare/` (или в смонтированную папку)
    - Проверить, что файл обработан:
    ```bash
-   docker compose logs watcher | grep "Загружено"
+   docker compose -f docker-compose.prod.yml --env-file .env.prod logs watcher | grep "Загружено"
    ls -la ./data/processed/  # Файл должен быть перемещен сюда
    ```
 
@@ -290,7 +290,7 @@ watcher:
   container_name: advisor-watcher
   environment:
     - DEBUG=${DEBUG:-0}
-    - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-config.settings.docker}
+    - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-config.settings.production}
     - SECRET_KEY=${SECRET_KEY}
     - DATABASE_URL=postgres://${POSTGRES_USER:-advisor}:${POSTGRES_PASSWORD:-advisor}@db:5432/${POSTGRES_DB:-advisor}
     - LOG_TO_FILE=${LOG_TO_FILE:-1}
@@ -375,6 +375,6 @@ watcher:
 - Смонтировать Windows-шару на Linux хосте
 - Обновить `docker-compose.yml` для использования bind mount вместо volume
 - Собрать образы на машине с интернетом и скопировать на целевую
-- Настроить `.env` файл
+- Настроить `.env.prod` файл
 
 **Все остальное уже работает!** 🎉

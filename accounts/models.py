@@ -7,23 +7,24 @@ class OrganizationalUnit(models.Model):
     """
     Модель для хранения организационных подразделений (OU) из Active Directory.
     """
-    code = models.CharField('Код подразделения', max_length=20, unique=True)
-    name = models.CharField('Название', max_length=255)
-    distinguished_name = models.CharField('Distinguished Name', max_length=512, unique=True)
+
+    code = models.CharField("Код подразделения", max_length=20, unique=True)
+    name = models.CharField("Название", max_length=255)
+    distinguished_name = models.CharField("Distinguished Name", max_length=512, unique=True)
     parent = models.ForeignKey(
-        'self',
+        "self",
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        related_name='children',
-        verbose_name='Родительское подразделение'
+        related_name="children",
+        verbose_name="Родительское подразделение",
     )
-    created_at = models.DateTimeField('Дата создания', default=timezone.now)
+    created_at = models.DateTimeField("Дата создания", default=timezone.now)
 
     class Meta:
-        verbose_name = 'Подразделение'
-        verbose_name_plural = 'Подразделения'
-        ordering = ['code']
+        verbose_name = "Подразделение"
+        verbose_name_plural = "Подразделения"
+        ordering = ["code"]
 
     def __str__(self):
         return f"{self.code} - {self.name}"
@@ -36,7 +37,7 @@ class OrganizationalUnit(models.Model):
         while parent:
             path.append(parent)
             parent = parent.parent
-        return ' / '.join(str(ou) for ou in reversed(path))
+        return " / ".join(str(ou) for ou in reversed(path))
 
 
 class User(AbstractUser):
@@ -55,25 +56,26 @@ class User(AbstractUser):
         ...     department=Department.objects.get(code='IT')
         ... )
     """
+
     # Стандартные поля из AbstractUser:
     # username - логин пользователя (из AD)
     # is_active - активен ли пользователь
     # date_joined - дата создания
-    
+
     # Дополнительные поля для интеграции с AD
-    fio = models.CharField('ФИО', max_length=255, blank=True)
+    fio = models.CharField("ФИО", max_length=255, blank=True)
     department = models.ForeignKey(
-        'printing.Department',  # Используем строковое имя модели
+        "printing.Department",  # Используем строковое имя модели
         on_delete=models.PROTECT,
         null=True,
-        related_name='users',
-        verbose_name='Отдел'
+        related_name="users",
+        verbose_name="Отдел",
     )
 
     class Meta(AbstractUser.Meta):
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
-        ordering = ['username']
+        verbose_name = "Пользователь"
+        verbose_name_plural = "Пользователи"
+        ordering = ["username"]
 
     def __str__(self):
         return self.fio if self.fio else self.username

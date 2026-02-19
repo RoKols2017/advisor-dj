@@ -52,7 +52,7 @@ class WindowsAuthBackend(ModelBackend):
                 None,  # домен
                 password,
                 win32security.LOGON32_LOGON_NETWORK,
-                win32security.LOGON32_PROVIDER_DEFAULT
+                win32security.LOGON32_PROVIDER_DEFAULT,
             )
 
             if token:
@@ -60,8 +60,8 @@ class WindowsAuthBackend(ModelBackend):
                 user, created = User.objects.get_or_create(
                     username=username.lower(),
                     defaults={
-                        'is_active': True,
-                    }
+                        "is_active": True,
+                    },
                 )
                 return user if user.is_active else None
 

@@ -4,11 +4,11 @@ from .print_event import Computer, Port, PrintEvent
 from .printer import Printer, PrinterModel
 
 __all__ = [
-    'Department',
-    'Building',
-    'Printer',
-    'PrinterModel',
-    'PrintEvent',
-    'Computer',
-    'Port',
-] 
+    "Department",
+    "Building",
+    "Printer",
+    "PrinterModel",
+    "PrintEvent",
+    "Computer",
+    "Port",
+]

@@ -170,6 +170,10 @@ docker-compose.override.yml
 data/
 !data/.gitkeep
 
+# Local operational artifacts
+.env.prod
+backups/
+
 # SSL/TLS сертификаты (приватные ключи не должны попадать в Git)
 infrastructure/certs/server/*.key
 infrastructure/certs/ca/*.key

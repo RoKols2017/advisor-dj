@@ -1,0 +1,32 @@
+.git
+.gitignore
+.github
+.cursor
+.venv
+venv
+env
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Secrets and local env files
+.env
+.env.*
+!.env.example
+!.env.prod.template
+
+# Local runtime data
+data/
+logs/
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Local infra secrets/certs
+infrastructure/certs/
+
+# Docs and local artifacts not needed for runtime image
+docs/
+*.tar
+*.tar.gz

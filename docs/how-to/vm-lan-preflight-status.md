@@ -32,7 +32,7 @@ owner: "@rom"
 - [ ] В системе нет Python 3.13:
   - есть `python3 3.12.3`
   - `python3.13` не найден.
-- [ ] `.env` не создан, поэтому при `docker compose config` есть предупреждения:
+- [ ] `.env.prod` не создан, поэтому при `docker compose config` есть предупреждения:
   - `SECRET_KEY variable is not set`
   - `IMPORT_TOKEN variable is not set`
 
@@ -41,7 +41,7 @@ owner: "@rom"
 1. Дать пользователю `roman` доступ к Docker daemon (группа `docker` + перелогин).
 2. Установить `make` (пакет `make`/`build-essential` для Ubuntu).
 3. Установить Python 3.13 (или подтвердить, что запуск будет только через Docker-образы).
-4. Сформировать `.env` из шаблона/скрипта (`scripts/generate_env.sh`) с прод-значениями.
+4. Сформировать `.env.prod` через `scripts/generate_env.sh --production` и заполнить секреты.
 
 ## Точка возобновления после перезагрузки
 
@@ -58,13 +58,13 @@ docker info --format '{{.ServerVersion}}'
 2. Если доступ есть, сразу перейти к запуску стека и проверкам:
 
 ```bash
-docker compose up -d
-docker compose exec web python manage.py migrate
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py migrate
 docker compose -f docker-compose.proxy.yml up -d
-docker compose ps
+docker compose -f docker-compose.prod.yml --env-file .env.prod ps
 curl http://localhost/health
-docker compose logs web --tail=100
-docker compose logs watcher --tail=100
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs web --tail=100
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs watcher --tail=100
 ```
 
 3. Если доступа нет, повторить шаг с группой Docker и снова перелогиниться:
@@ -81,11 +81,11 @@ docker info --format '{{.ServerVersion}}'
 ## Команды, которыми продолжим после снятия блокеров
 
 ```bash
-docker compose up -d
-docker compose exec web python manage.py migrate
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py migrate
 docker compose -f docker-compose.proxy.yml up -d
-docker compose ps
+docker compose -f docker-compose.prod.yml --env-file .env.prod ps
 curl http://localhost/health
-docker compose logs web --tail=100
-docker compose logs watcher --tail=100
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs web --tail=100
+docker compose -f docker-compose.prod.yml --env-file .env.prod logs watcher --tail=100
 ```

@@ -6,6 +6,7 @@
 #   --output FILE      Файл для сохранения .env (по умолчанию: .env)
 #   --allowed-hosts    Разрешенные хосты (по умолчанию: auto-detect)
 #   --interactive      Интерактивный режим с запросами
+#   --production       Сгенерировать production env (.env.prod по умолчанию)
 #   --help             Показать эту справку
 
 set -euo pipefail
@@ -20,6 +21,7 @@ NC='\033[0m' # No Color
 OUTPUT_FILE=".env"
 ALLOWED_HOSTS=""
 INTERACTIVE=false
+PRODUCTION=false
 
 # Парсинг аргументов
 while [[ $# -gt 0 ]]; do
@@ -36,6 +38,10 @@ while [[ $# -gt 0 ]]; do
             INTERACTIVE=true
             shift
             ;;
+        --production)
+            PRODUCTION=true
+            shift
+            ;;
         --help)
             echo "Генератор .env файла для Print Advisor"
             echo ""
@@ -45,6 +51,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --output FILE      Файл для сохранения .env (по умолчанию: .env)"
             echo "  --allowed-hosts    Разрешенные хосты через запятую (по умолчанию: auto-detect)"
             echo "  --interactive      Интерактивный режим с запросами"
+            echo "  --production       Сгенерировать production env (.env.prod по умолчанию)"
             echo "  --help             Показать эту справку"
             exit 0
             ;;
@@ -58,6 +65,10 @@ done
 
 echo -e "${BLUE}=== Генератор .env файла для Print Advisor ===${NC}"
 echo ""
+
+if [[ "$PRODUCTION" == true && "$OUTPUT_FILE" == ".env" ]]; then
+    OUTPUT_FILE=".env.prod"
+fi
 
 # Проверка существования файла
 if [[ -f "$OUTPUT_FILE" ]]; then
@@ -135,8 +146,14 @@ if [[ "$INTERACTIVE" == true ]]; then
 else
     POSTGRES_DB="advisor"
     POSTGRES_USER="advisor"
-    WEB_PORT="8001"
+    WEB_PORT="8000"
     POSTGRES_PORT="5432"
+fi
+
+if [[ "$PRODUCTION" == true ]]; then
+    DJANGO_SETTINGS_MODULE_VALUE="config.settings.production"
+else
+    DJANGO_SETTINGS_MODULE_VALUE="config.settings.docker"
 fi
 
 # Создание .env файла
@@ -155,7 +172,7 @@ POSTGRES_PORT=${POSTGRES_PORT}
 DEBUG=0
 SECRET_KEY=${SECRET_KEY}
 ALLOWED_HOSTS=${ALLOWED_HOSTS}
-DJANGO_SETTINGS_MODULE=config.settings.docker
+DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE_VALUE}
 
 # === Логи ===
 LOG_TO_FILE=1
@@ -198,6 +215,5 @@ echo -e "  SECRET_KEY: ${SECRET_KEY:0:20}... (${#SECRET_KEY} символов)"
 echo -e "  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:0:10}... (${#POSTGRES_PASSWORD} символов)"
 echo -e "  IMPORT_TOKEN: ${IMPORT_TOKEN:0:10}... (${#IMPORT_TOKEN} символов)"
 echo ""
-
 
 

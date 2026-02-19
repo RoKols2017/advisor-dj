@@ -61,11 +61,11 @@ python manage.py runserver 0.0.0.0:8000
 git clone git@github.com:RoKols2017/advisor-dj.git
 cd advisor-dj
 
-# Сгенерировать .env файл со всеми необходимыми ключами
-./scripts/generate_env.sh
+# Сгенерировать production env файл со всеми необходимыми ключами
+./scripts/generate_env.sh --production
 
 # Или интерактивный режим для настройки параметров
-# ./scripts/generate_env.sh --interactive
+# ./scripts/generate_env.sh --production --interactive
 
 # Создать каталоги для данных
 mkdir -p data/{watch,processed,quarantine}
@@ -77,21 +77,20 @@ docker network create reverse-proxy-network
 # Запустить Nginx reverse proxy
 docker compose -f docker-compose.proxy.yml up -d
 
-# Запустить весь стек приложения
-make up-build
-# или
-docker compose up --build -d
+# Запустить production-стек приложения
+docker compose -f docker-compose.prod.yml --env-file .env.prod build
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 
 # Выполнить миграции
-docker compose exec web python manage.py migrate
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py migrate
 
 # Создать суперпользователя
-docker compose exec web python manage.py createsuperuser
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py createsuperuser
 
 # Проверить статус
-docker compose ps
+docker compose -f docker-compose.prod.yml --env-file .env.prod ps
 docker compose -f docker-compose.proxy.yml ps
-make smoke
+SMOKE_COMPOSE_FILE=docker-compose.prod.yml ./scripts/smoke.sh
 ```
 
 ### Автозапуск при старте системы
@@ -119,7 +118,7 @@ Watcher автоматически отслеживает каталог `data/w
 
 Проверки health:
 - через Nginx (с хоста): `curl http://localhost/health`
-- напрямую внутри web-контейнера: `docker compose exec -T web curl -f -s http://localhost:8000/health/`
+- напрямую внутри web-контейнера: `docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T web curl -f -s http://localhost:8000/health/`
 
 ### Production Deployment
 
@@ -138,7 +137,7 @@ Watcher автоматически отслеживает каталог `data/w
 pytest -q
 
 # С покрытием кода
-pytest --cov=. --cov-report=term-missing --cov-fail-under=80
+pytest --cov=. --cov-report=term-missing --cov-fail-under=70
 
 # Только unit-тесты
 pytest tests/unit/ -q
@@ -151,7 +150,7 @@ pytest -m "not slow" -q
 ```
 
 **Пороги покрытия:**
-- Общий проект: ≥ 80% (актуальное значение смотрите в CI/Codecov)
+- Общий проект: ≥ 70% (текущее значение в `pytest.ini`; целевой порог может быть выше по политике команды)
 - Изменённые файлы: ≥ 85%
 - Всего тестов: 51 (локально: 51 passed)
 

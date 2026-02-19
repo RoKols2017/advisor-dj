@@ -9,10 +9,11 @@ Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/opt/advisor-dj
 ExecStartPre=-/usr/bin/docker network create reverse-proxy-network
-ExecStart=/usr/bin/docker compose up -d
+ExecStartPre=/usr/bin/test -f .env.prod
+ExecStart=/usr/bin/docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
 ExecStart=/usr/bin/docker compose -f docker-compose.proxy.yml up -d
 ExecStop=/usr/bin/docker compose -f docker-compose.proxy.yml down
-ExecStop=/usr/bin/docker compose down
+ExecStop=/usr/bin/docker compose --env-file .env.prod -f docker-compose.prod.yml down
 TimeoutStartSec=0
 
 [Install]

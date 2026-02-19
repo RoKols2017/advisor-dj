@@ -1,2 +1,1 @@
-default_app_config = 'config'
-
+default_app_config = "config"

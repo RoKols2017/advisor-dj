@@ -1,0 +1,9 @@
+# Advisor DJ database backup schedule
+# Install example:
+#   crontab infrastructure/cron/advisor-db-backup.cron
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Daily backup at 02:30
+30 2 * * * cd /opt/advisor-dj && ./scripts/backup_db.sh >> /var/log/advisor-db-backup.log 2>&1

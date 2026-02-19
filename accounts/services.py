@@ -95,9 +95,7 @@ class UserService:
         return User.objects.filter(username__iexact=uname).first()
 
 
-def get_or_create_user_by_username(
-    username: str, *, fio: str | None = None, is_active: bool = True
-) -> Any:
+def get_or_create_user_by_username(username: str, *, fio: str | None = None, is_active: bool = True) -> Any:
     uname = _normalize_username(username)
     if not uname:
         raise ValueError("username is empty")

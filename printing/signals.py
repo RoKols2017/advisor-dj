@@ -26,10 +26,10 @@ def update_statistics(sender: type[PrintEvent], instance: PrintEvent, created: b
     if created:
         # Очищаем кэш статистики
         if instance.user.department_id is not None:
-            cache.delete(f'print_stats_{instance.user.department_id}')
-        cache.delete('total_print_stats')
-        cache.delete('department_stats_top')
-        cache.delete('user_stats_top10')
+            cache.delete(f"print_stats_{instance.user.department_id}")
+        cache.delete("total_print_stats")
+        cache.delete("department_stats_top")
+        cache.delete("user_stats_top10")
         # Глобальная инвалидация всех date-specific ключей статистики.
         try:
             cache.incr(STATS_CACHE_VERSION_KEY)

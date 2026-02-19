@@ -1,6 +1,7 @@
 """
 Health check endpoint for Docker and load balancers.
 """
+
 import logging
 
 from django.core.cache import cache
@@ -17,15 +18,8 @@ def health_check(request):
     - Cache connectivity
     - Basic application health
     """
-    health_status = {
-        'status': 'healthy',
-        'checks': {
-            'database': 'ok',
-            'cache': 'ok',
-            'application': 'ok'
-        }
-    }
-    
+    health_status = {"status": "healthy", "checks": {"database": "ok", "cache": "ok", "application": "ok"}}
+
     # Check database connectivity
     try:
         with connection.cursor() as cursor:
@@ -33,20 +27,20 @@ def health_check(request):
             cursor.fetchone()
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
-        health_status['checks']['database'] = 'error'
-        health_status['status'] = 'unhealthy'
-    
+        health_status["checks"]["database"] = "error"
+        health_status["status"] = "unhealthy"
+
     # Check cache connectivity
     try:
-        cache.set('health_check', 'ok', 10)
-        if cache.get('health_check') != 'ok':
+        cache.set("health_check", "ok", 10)
+        if cache.get("health_check") != "ok":
             raise Exception("Cache read/write failed")
     except Exception as e:
         logger.error(f"Cache health check failed: {e}")
-        health_status['checks']['cache'] = 'error'
-        health_status['status'] = 'unhealthy'
-    
+        health_status["checks"]["cache"] = "error"
+        health_status["status"] = "unhealthy"
+
     # Return appropriate HTTP status
-    status_code = 200 if health_status['status'] == 'healthy' else 503
-    
+    status_code = 200 if health_status["status"] == "healthy" else 503
+
     return JsonResponse(health_status, status=status_code)

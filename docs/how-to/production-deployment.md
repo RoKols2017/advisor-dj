@@ -18,19 +18,19 @@ owner: "@rom"
 ## 2) Secrets and env
 
 - Секреты только через переменные окружения (`SECRET_KEY`, DB creds, токены).
-- Не коммитьте `.env` в репозиторий.
-- Для генерации базового env используйте `scripts/generate_env.sh`.
+- Не коммитьте `.env.prod` в репозиторий.
+- Для генерации production env используйте `scripts/generate_env.sh --production`.
 
 ## 3) Database and migrations
 
 ```bash
-docker compose exec web python manage.py migrate --noinput
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py migrate --noinput
 ```
 
 ## 4) Static files
 
 ```bash
-docker compose exec web python manage.py collectstatic --noinput
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py collectstatic --noinput
 ```
 
 ## 5) Reverse proxy / TLS
@@ -42,7 +42,7 @@ docker compose exec web python manage.py collectstatic --noinput
 
 ```bash
 curl -f http://localhost/health/
-./scripts/smoke.sh
+SMOKE_COMPOSE_FILE=docker-compose.prod.yml SMOKE_ENV_FILE=.env.prod ./scripts/smoke.sh
 ```
 
 ## 7) Operational docs

@@ -42,5 +42,3 @@ class ImportPrintEventsServiceTests(TestCase):
         self.assertEqual(result["created"], 1)
         self.assertFalse(result["errors"])
         self.assertTrue(PrintEvent.objects.filter(job_id="job-1").exists())
-
-

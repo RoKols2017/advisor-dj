@@ -2,7 +2,7 @@ import logging
 
 from .services import import_print_events, import_users_from_csv_stream
 
-logger = logging.getLogger('import')
+logger = logging.getLogger("import")
 
 
 def import_users_from_csv(file):

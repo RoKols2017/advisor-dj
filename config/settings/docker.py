@@ -19,11 +19,11 @@ USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = None
 
 # Allow all hosts for Docker testing
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["*"]
 
 # Use console logging for Docker
-os.environ['LOG_TO_CONSOLE'] = '1'
-os.environ['LOG_TO_FILE'] = '0'
+os.environ["LOG_TO_CONSOLE"] = "1"
+os.environ["LOG_TO_FILE"] = "0"
 
 # Re-import logging config with new environment
 LOGGING = DOCKER_LOGGING

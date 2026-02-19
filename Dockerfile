@@ -30,7 +30,7 @@ COPY . .
 RUN mkdir -p /app/logs /app/data/watch /app/data/processed /app/data/quarantine
 
 # Collect static files
-RUN python manage.py collectstatic --noinput
+RUN SECRET_KEY=docker-build-secret-key ALLOWED_HOSTS=localhost python manage.py collectstatic --noinput
 
 # Change ownership to app user
 RUN chown -R appuser:appuser /app
@@ -47,4 +47,3 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 
 # Default command for web service
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"]
-

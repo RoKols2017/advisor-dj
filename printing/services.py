@@ -164,22 +164,22 @@ def import_print_events(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
     created = 0
     errors: list[str] = []
     BATCH_SIZE = 100  # Обрабатываем события батчами для оптимизации транзакций
-    
+
     events_list = list(events) if not isinstance(events, list) else events
     total_events = len(events_list)
-    
+
     # Получаем все существующие job_id одним запросом для дедупликации
     existing_job_ids = set(
         PrintEvent.objects.filter(
             job_id__in=[(e.get("JobID") or "").strip()[:64] for e in events_list if e.get("JobID")]
         ).values_list("job_id", flat=True)
     )
-    
+
     # Обрабатываем события батчами
     for batch_start in range(0, total_events, BATCH_SIZE):
         batch_end = min(batch_start + BATCH_SIZE, total_events)
         batch_events = events_list[batch_start:batch_end]
-        
+
         batch_created = 0
         for event in batch_events:
             try:
@@ -296,11 +296,12 @@ def import_print_events(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
                 logger.error(msg, exc_info=True)
                 errors.append(msg)
         created += batch_created
-    
+
     return {"created": created, "errors": errors}
 
 
 # -------------------- Query/Stats services --------------------
+
 
 def get_dashboard_stats(days: int = 30) -> dict[str, Any]:
     from .models import PrintEvent  # local import to avoid cycles at load time
@@ -346,29 +347,25 @@ def get_statistics_data(start_date: Any | None, end_date: Any | None) -> dict[st
         # Фильтруем события по датам через related events
         # Используем фильтрацию в annotate для правильного подсчета
         department_stats = (
-            Department.objects
-            .annotate(
+            Department.objects.annotate(
                 total_pages=Sum(
                     "users__print_events__pages",
                     filter=Q(
-                        users__print_events__timestamp__gte=start_date,
-                        users__print_events__timestamp__lte=end_date
-                    )
+                        users__print_events__timestamp__gte=start_date, users__print_events__timestamp__lte=end_date
+                    ),
                 ),
                 total_documents=Count(
                     "users__print_events",
                     filter=Q(
-                        users__print_events__timestamp__gte=start_date,
-                        users__print_events__timestamp__lte=end_date
+                        users__print_events__timestamp__gte=start_date, users__print_events__timestamp__lte=end_date
                     ),
-                    distinct=True
+                    distinct=True,
                 ),
                 total_size=Sum(
                     "users__print_events__byte_size",
                     filter=Q(
-                        users__print_events__timestamp__gte=start_date,
-                        users__print_events__timestamp__lte=end_date
-                    )
+                        users__print_events__timestamp__gte=start_date, users__print_events__timestamp__lte=end_date
+                    ),
                 ),
             )
             .filter(total_pages__gt=0)
@@ -392,25 +389,16 @@ def get_statistics_data(start_date: Any | None, end_date: Any | None) -> dict[st
             .annotate(
                 total_pages=Sum(
                     "print_events__pages",
-                    filter=Q(
-                        print_events__timestamp__gte=start_date,
-                        print_events__timestamp__lte=end_date
-                    )
+                    filter=Q(print_events__timestamp__gte=start_date, print_events__timestamp__lte=end_date),
                 ),
                 total_documents=Count(
                     "print_events",
-                    filter=Q(
-                        print_events__timestamp__gte=start_date,
-                        print_events__timestamp__lte=end_date
-                    ),
-                    distinct=True
+                    filter=Q(print_events__timestamp__gte=start_date, print_events__timestamp__lte=end_date),
+                    distinct=True,
                 ),
                 total_size=Sum(
                     "print_events__byte_size",
-                    filter=Q(
-                        print_events__timestamp__gte=start_date,
-                        print_events__timestamp__lte=end_date
-                    )
+                    filter=Q(print_events__timestamp__gte=start_date, print_events__timestamp__lte=end_date),
                 ),
             )
             .filter(total_pages__gt=0)
@@ -427,7 +415,7 @@ def get_statistics_data(start_date: Any | None, end_date: Any | None) -> dict[st
         "printer__model",
         "user",
     )
-    
+
     # ОБЯЗАТЕЛЬНАЯ фильтрация по датам для производительности
     # Если даты не указаны, используем текущий месяц по умолчанию
     now = timezone.now()
@@ -435,7 +423,7 @@ def get_statistics_data(start_date: Any | None, end_date: Any | None) -> dict[st
         start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     if end_date is None:
         end_date = now
-    
+
     query = query.filter(timestamp__gte=start_date, timestamp__lte=end_date)
 
     results = (

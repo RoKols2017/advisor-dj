@@ -3,7 +3,7 @@ title: "Чеклист развертывания для ЛВС без инте�
 type: deployment
 status: draft
 date: 2025-01-30
-last_verified: "2026-02-18"
+last_verified: "2026-02-20"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -42,6 +42,9 @@ owner: "@rom"
 ---
 
 ## ⚠️ Что нужно настроить для работы с Windows-сервером
+
+Рекомендуемый путь для production: транзитные каталоги (`inbox`) + локальный ingest (`scripts/ingest_mover.sh` + systemd timer).
+См. `docs/how-to/transit-ingest-pipeline.md`.
 
 ### 1. Монтирование сетевой папки в Docker
 

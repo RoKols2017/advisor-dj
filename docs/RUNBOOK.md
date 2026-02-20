@@ -2,7 +2,7 @@
 title: "Runbook (Print Advisor)"
 type: guide
 status: draft
-last_verified: "2026-02-18"
+last_verified: "2026-02-20"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -67,6 +67,34 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml exec web python m
 docker cp ./events.json advisor-watcher:/app/data/watch/
 docker compose --env-file .env.prod -f docker-compose.prod.yml logs watcher --tail=200
 ```
+
+## 5.1) Транзитный ingest из Windows источников
+
+Подготовка каталогов:
+
+```bash
+sudo /opt/advisor-dj/scripts/setup_transit_ingest.sh /srv/advisor
+```
+
+Установка таймера ingest:
+
+```bash
+sudo cp /opt/advisor-dj/infrastructure/systemd/advisor-ingest.env.example /etc/default/advisor-ingest
+sudo cp /opt/advisor-dj/infrastructure/systemd/advisor-ingest-mover.service /etc/systemd/system/
+sudo cp /opt/advisor-dj/infrastructure/systemd/advisor-ingest-mover.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now advisor-ingest-mover.timer
+```
+
+Проверка:
+
+```bash
+systemctl status advisor-ingest-mover.timer --no-pager
+journalctl -u advisor-ingest-mover.service -n 50 --no-pager
+tail -n 100 /srv/advisor/ingest/logs/ingest_mover.log
+```
+
+Замечание: удаленные Windows хосты должны писать только в `/srv/advisor/inbox/*/incoming`, не в Docker volume напрямую.
 
 ## 6) Логи и диагностика
 

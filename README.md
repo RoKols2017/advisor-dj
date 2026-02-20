@@ -2,7 +2,7 @@
 title: "Print Advisor"
 type: project
 status: draft
-last_verified: "2026-02-18"
+last_verified: "2026-02-20"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -114,6 +114,8 @@ Watcher автоматически отслеживает каталог `data/w
 
 Обработанные файлы перемещаются в `data/processed/`, файлы с ошибками — в `data/quarantine/`.
 
+Для многосерверной загрузки (DC + 2 print servers) рекомендуется транзитная схема `inbox -> ingest -> watch`, см. `docs/how-to/transit-ingest-pipeline.md`.
+
 После запуска стека приложение доступно через reverse proxy: `http://localhost/`.
 
 Проверки health:
@@ -197,6 +199,7 @@ advisor-dj/
   - [docs/DEPLOY_PLAN.md](docs/DEPLOY_PLAN.md) - общий план деплоя
   - [docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md) - руководство по деплою
 - **Watcher и файлы**: [docs/FILE_WATCHER_SETUP.md](docs/FILE_WATCHER_SETUP.md) - настройка watcher и прав доступа
+- **Windows транзитная загрузка**: [docs/how-to/transit-ingest-pipeline.md](docs/how-to/transit-ingest-pipeline.md) - схема для 3 источников через SMB/Scheduler
 - **Эксплуатация**: [docs/RUNBOOK.md](docs/RUNBOOK.md) - операционные задачи
 - **Статус проекта**: [docs/STATUS.md](docs/STATUS.md) - текущий статус и риски
 - **Переменные окружения**: [docs/ENV.md](docs/ENV.md) - описание переменных окружения

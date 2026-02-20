@@ -1,4 +1,4 @@
-# Инфраструктура Nginx Reverse Proxy
+# Инфраструктура
 
 ## Структура
 
@@ -14,6 +14,12 @@ infrastructure/
 │       ├── security-headers.conf   # Заголовки безопасности
 │       ├── proxy-common.conf       # Общие настройки проксирования
 │       └── ssl-common.conf         # Общие SSL настройки (для этапа B)
+├── systemd/
+│   ├── advisor-ingest-mover.service # oneshot ingest service
+│   ├── advisor-ingest-mover.timer   # периодический запуск ingest
+│   └── advisor-ingest.env.example   # пример env для ingest
+├── samba/
+│   └── smb.conf.example             # шаблон SMB share для 3 источников
 └── certs/
     ├── ca/                        # Сертификаты CA (MS CA)
     └── server/                    # Серверные сертификаты
@@ -58,3 +64,7 @@ curl http://localhost/
 
 **См. подробную документацию:** `docs/NGINX_REVERSE_PROXY_IMPLEMENTATION.md`
 
+## Транзитный ingest
+
+Для загрузки данных из нескольких Windows источников используйте `infrastructure/systemd/*` и `scripts/ingest_mover.sh`.
+Подробно: `docs/how-to/transit-ingest-pipeline.md`.

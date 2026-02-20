@@ -1,5 +1,5 @@
 # Print Advisor - Makefile
-.PHONY: help build up down logs smoke migrate collectstatic clean test lint nginx-setup nginx-up nginx-down nginx-logs nginx-test deploy-all
+.PHONY: help build up down logs smoke migrate collectstatic clean test lint nginx-setup nginx-up nginx-down nginx-logs nginx-test deploy-all ingest-setup ingest-install ingest-run ingest-status
 
 # Default target
 help:
@@ -21,6 +21,10 @@ help:
 	@echo "  clean        - Clean up containers and volumes"
 	@echo "  restart      - Restart all services"
 	@echo "  deploy-all   - Deploy everything (Nginx + App) with migrations"
+	@echo "  ingest-setup - Create transit ingest directories"
+	@echo "  ingest-install - Install ingest systemd timer"
+	@echo "  ingest-run   - Run ingest mover once"
+	@echo "  ingest-status - Show ingest timer and logs"
 	@echo ""
 	@echo "Nginx Reverse Proxy commands:"
 	@echo "  nginx-setup  - Create reverse-proxy-network (one-time setup)"
@@ -133,3 +137,21 @@ deploy-all: nginx-setup nginx-up build up
 	@echo "✅ Deployment complete!"
 	@echo "Access application at: http://localhost/"
 	@echo "Create superuser: make shell (then: python manage.py createsuperuser)"
+
+# Ingest transit pipeline commands
+ingest-setup:
+	@sudo ./scripts/setup_transit_ingest.sh /srv/advisor
+
+ingest-install:
+	@sudo cp infrastructure/systemd/advisor-ingest.env.example /etc/default/advisor-ingest
+	@sudo cp infrastructure/systemd/advisor-ingest-mover.service /etc/systemd/system/
+	@sudo cp infrastructure/systemd/advisor-ingest-mover.timer /etc/systemd/system/
+	@sudo systemctl daemon-reload
+	@sudo systemctl enable --now advisor-ingest-mover.timer
+
+ingest-run:
+	@sudo /opt/advisor-dj/scripts/ingest_mover.sh
+
+ingest-status:
+	@systemctl status advisor-ingest-mover.timer --no-pager
+	@journalctl -u advisor-ingest-mover.service -n 30 --no-pager

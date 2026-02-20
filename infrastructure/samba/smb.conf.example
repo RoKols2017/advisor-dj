@@ -1,0 +1,35 @@
+[global]
+   server role = standalone server
+   workgroup = WORKGROUP
+   security = user
+   map to guest = never
+   smb encrypt = desired
+   log file = /var/log/samba/%m.log
+   max log size = 2000
+
+[advisor-dc$]
+   path = /srv/advisor/inbox/dc
+   browseable = no
+   read only = no
+   valid users = ingest_dc
+   force user = root
+   create mask = 0640
+   directory mask = 0750
+
+[advisor-print1$]
+   path = /srv/advisor/inbox/print1
+   browseable = no
+   read only = no
+   valid users = ingest_print1
+   force user = root
+   create mask = 0640
+   directory mask = 0750
+
+[advisor-print2$]
+   path = /srv/advisor/inbox/print2
+   browseable = no
+   read only = no
+   valid users = ingest_print2
+   force user = root
+   create mask = 0640
+   directory mask = 0750

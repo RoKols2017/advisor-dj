@@ -2,7 +2,7 @@
 title: "ENV Variables Reference"
 type: reference
 status: draft
-last_verified: "2026-02-18"
+last_verified: "2026-02-20"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -40,6 +40,23 @@ owner: "@rom"
 | WATCHER_BACKOFF_BASE | База экспоненциальной задержки, сек | `2` |
 | WATCHER_BACKOFF_MAX | Максимальная задержка между повторами, сек | `30` |
 | WATCHER_DEADLINE_SECONDS | Дедлайн на обработку файла, сек | `300` |
+
+## Ingest (systemd service для транзитных каталогов)
+
+Эти переменные задаются в `/etc/default/advisor-ingest` (см. `infrastructure/systemd/advisor-ingest.env.example`).
+
+| Переменная | Назначение | Пример/дефолт |
+| --- | --- | --- |
+| INBOX_ROOT | Корень транзитных каталогов | `/srv/advisor/inbox` |
+| WATCH_DIR | Куда ingest кладет файлы для watcher | `/var/lib/docker/volumes/advisor-dj_data/_data/watch` |
+| FAILED_DIR | Куда складывать неуспешные файлы | `/srv/advisor/inbox/_failed` |
+| ARCHIVE_DIR | Архив успешно поставленных файлов | `/srv/advisor/inbox/_archive` |
+| STATE_DIR | Состояние дедупликации | `/srv/advisor/ingest/state` |
+| LOG_FILE | Лог ingest-процесса | `/srv/advisor/ingest/logs/ingest_mover.log` |
+| LOCK_FILE | Файл блокировки от параллельных запусков | `/var/lock/advisor-ingest.lock` |
+| MIN_AGE_SECONDS | Минимальный возраст файла перед обработкой | `20` |
+| MAX_FILES_PER_RUN | Лимит файлов за запуск | `500` |
+| SOURCES | Список источников | `dc print1 print2` |
 
 ## Безопасность (prod)
 

@@ -1,0 +1,12 @@
+[Unit]
+Description=Advisor ingest mover
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/default/advisor-ingest
+WorkingDirectory=/opt/advisor-dj
+ExecStart=/opt/advisor-dj/scripts/ingest_mover.sh
+User=root
+Group=root

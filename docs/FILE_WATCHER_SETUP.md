@@ -2,7 +2,7 @@
 title: "Настройка загрузчика файлов (File Watcher)"
 type: guide
 status: draft
-last_verified: "2026-02-10"
+last_verified: "2026-02-20"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
@@ -39,12 +39,12 @@ Watcher работает от имени пользователя `appuser` (UID
 
 ### Команды для настройки прав
 
-#### Вариант 1: Права 777 (рекомендуется для разработки)
+#### Вариант 1: Права 777 (только для локальной разработки)
 
 ```bash
-sudo chmod 777 /home/roman/project/advisor-dj/data/watch
-sudo chmod 777 /home/roman/project/advisor-dj/data/processed
-sudo chmod 777 /home/roman/project/advisor-dj/data/quarantine
+sudo chmod 777 data/watch
+sudo chmod 777 data/processed
+sudo chmod 777 data/quarantine
 ```
 
 **Преимущества:**
@@ -58,9 +58,9 @@ sudo chmod 777 /home/roman/project/advisor-dj/data/quarantine
 #### Вариант 2: Изменить владельца
 
 ```bash
-sudo chown -R 999:999 /home/roman/project/advisor-dj/data/watch
-sudo chown -R 999:999 /home/roman/project/advisor-dj/data/processed
-sudo chown -R 999:999 /home/roman/project/advisor-dj/data/quarantine
+sudo chown -R 999:999 data/watch
+sudo chown -R 999:999 data/processed
+sudo chown -R 999:999 data/quarantine
 ```
 
 **Преимущества:**
@@ -169,31 +169,30 @@ docker compose exec web python manage.py shell -c "from printing.models import P
 
 ## Загрузка файлов
 
+Для production рекомендуется использовать транзитную загрузку (inbox -> ingest -> watch), а не прямую запись удаленных серверов в watcher-каталог. Подробная схема: `docs/how-to/transit-ingest-pipeline.md`.
+
 ### Ручная загрузка
 
 ```bash
 # Копирование файлов в каталог watch
-cp /путь/к/файлу.json /home/roman/project/advisor-dj/data/watch/
-cp /путь/к/файлу.csv /home/roman/project/advisor-dj/data/watch/
+cp /path/to/file.json data/watch/
+cp /path/to/file.csv data/watch/
 ```
 
-### Автоматическая загрузка (скрипт)
+### Автоматическая загрузка (через транзит)
 
-Создайте скрипт для автоматической синхронизации с Windows сервером:
+Используйте ingest-процесс на Linux:
 
 ```bash
-#!/bin/bash
-# Пример скрипта sync_from_windows.sh
-
-WATCH_DIR="/home/roman/project/advisor-dj/data/watch"
-SOURCE_DIR="/mnt/windows_server/print_data"
-
-# Копирование файлов
-cp "$SOURCE_DIR"/*.json "$WATCH_DIR/" 2>/dev/null
-cp "$SOURCE_DIR"/*.csv "$WATCH_DIR/" 2>/dev/null
-
-echo "Файлы скопированы в $WATCH_DIR"
+sudo cp infrastructure/systemd/advisor-ingest.env.example /etc/default/advisor-ingest
+sudo cp infrastructure/systemd/advisor-ingest-mover.service /etc/systemd/system/
+sudo cp infrastructure/systemd/advisor-ingest-mover.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now advisor-ingest-mover.timer
 ```
+
+Скрипт ingestion: `scripts/ingest_mover.sh`.
+Он обрабатывает только `*.json` и `*.csv`, проверяет стабильность файла, выполняет дедупликацию и атомарно переносит файлы в watcher queue.
 
 ## Переменные окружения
 
@@ -249,7 +248,7 @@ echo "Файлы скопированы в $WATCH_DIR"
 
 ```bash
 # 1. Копирование файла
-cp users.csv /home/roman/project/advisor-dj/data/watch/
+cp users.csv data/watch/
 
 # 2. Проверка логов (в реальном времени)
 docker compose logs watcher -f
@@ -274,7 +273,6 @@ find data/processed -type f -mtime +30 -exec mv {} data/archive/ \;
 # Запуск скрипта проверки статуса
 ./scripts/check_import_status.sh
 ```
-
 
 
 

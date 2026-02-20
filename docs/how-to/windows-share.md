@@ -2,56 +2,52 @@
 title: "How-to: Интеграция Windows SMB шары для импорта"
 type: how-to
 status: draft
-last_verified: "2026-02-10"
+last_verified: "2026-02-20"
 verified_against_commit: "latest"
 owner: "@rom"
 ---
 
 ## Цель
-Подключить выгрузку файлов печати с Windows-сервера в watcher (`/app/data/watch`) через SMB (CIFS) с Linux-стороны (pull, read-only).
+Подключить выгрузку файлов с Windows серверов через SMB в транзитные каталоги Linux, затем переносить их в watcher через локальный ingest-процесс.
 
-## Рекомендованный вариант: pull с Ubuntu (host) и bind-mount в watcher
+## Рекомендованный вариант: push в транзитные каталоги
 
-1) Установить CIFS и создать точку монтирования
+1) Подготовить структуру каталогов:
+
 ```bash
-sudo apt-get update && sudo apt-get install -y cifs-utils
-sudo mkdir -p /mnt/printshare
+sudo /opt/advisor-dj/scripts/setup_transit_ingest.sh /srv/advisor
 ```
 
-2) Смонтировать шару Windows (замените хост/шару/домен/логин)
-```bash
-sudo mount -t cifs //WIN-SERVER/PrintEvents /mnt/printshare \
-  -o username=WIN_USER,password='WIN_PASS',domain=WIN_DOMAIN,vers=3.0,ro,iocharset=utf8
-```
+2) На Linux открыть SMB доступ только к транзитным каталогам:
+- `/srv/advisor/inbox/dc/incoming`
+- `/srv/advisor/inbox/print1/incoming`
+- `/srv/advisor/inbox/print2/incoming`
 
-3) Привязать шару в watcher (compose)
-В `docker-compose.yml` (или prod-оверлее) добавьте для сервиса `watcher`:
-```yaml
-services:
-  watcher:
-    volumes:
-      - /mnt/printshare:/app/data/watch:ro
-      - logs:/app/logs
-      - data:/app/data
-```
+3) Использовать скрипты в `scripts/windows/` для отправки файлов из DC/print-серверов в эти каталоги.
 
-4) Перезапустить watcher
+4) На Linux ingest-процесс переносит файлы в watcher queue по таймеру:
+
 ```bash
-docker compose up -d watcher
-docker compose exec watcher ls -la /app/data/watch
+sudo cp /opt/advisor-dj/infrastructure/systemd/advisor-ingest.env.example /etc/default/advisor-ingest
+sudo cp /opt/advisor-dj/infrastructure/systemd/advisor-ingest-mover.service /etc/systemd/system/
+sudo cp /opt/advisor-dj/infrastructure/systemd/advisor-ingest-mover.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now advisor-ingest-mover.timer
 ```
 
 ## Атомарность
-- Выгружайте файл на Windows во временное имя (например, `.tmp`), затем делайте `Rename` в конечное имя — watcher увидит уже полностью записанный файл.
+- Отправляйте файл на Linux во временное имя (`.part`), после копирования переименовывайте в итоговое.
+- Ingest переносит файл в watcher тоже атомарно (`.part` -> rename).
 
 ## Альтернативы
-- SFTP/SSH (push с Windows): `pscp`/WinSCP в директорию `/var/lib/docker/volumes/<project>_data/_data/watch/` на Ubuntu.
-- Samba на Ubuntu (share → Windows push): привычнее для AD, но открывает дополнительный сервис на Linux.
-- Периодический `rsync` с `remove-source-files` в локальную watch-папку.
+- Pull через CIFS mount (Linux читает Windows share) допустим для одного источника, но сложнее масштабируется на 3 сервера.
+- SFTP/SSH push допустим, если SMB запрещен политиками.
 
 ## Траблшутинг
-- Права/доступ: проверьте, что монтирование `ro`, кодировка `iocharset=utf8` корректна.
-- Логи демона: `docker compose logs watcher --tail=200`.
-- Проверка путей: `docker volume inspect advisor-dj_data -f '{{.Mountpoint}}'`.
+- Проверка таймера ingest: `systemctl status advisor-ingest-mover.timer --no-pager`.
+- Логи ingest: `tail -n 200 /srv/advisor/ingest/logs/ingest_mover.log`.
+- Логи watcher: `docker compose --env-file .env.prod -f docker-compose.prod.yml logs watcher --tail=200`.
 
+## См. также
+- `docs/how-to/transit-ingest-pipeline.md`
 

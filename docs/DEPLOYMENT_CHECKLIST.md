@@ -8,6 +8,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← Deployment Readiness](DEPLOYMENT_READINESS.md) · [Back to README](../README.md) · [Deploy Plan →](DEPLOY_PLAN.md)
+
 # Чеклист развертывания Print Advisor в ЛВС без интернета
 
 ## ✅ Что уже работает
@@ -381,3 +383,9 @@ watcher:
 - Настроить `.env.prod` файл
 
 **Все остальное уже работает!** 🎉
+
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

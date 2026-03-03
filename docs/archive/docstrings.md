@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← DEVELOPER_GUIDE](DEVELOPER_GUIDE.md) · [Back to README](../../README.md) · [README →](README.md)
+
 # 📝 Примеры Docstrings для Print Advisor
 
 ## 📊 Модели
@@ -501,4 +503,10 @@ class PrintEventTests(TestCase):
             timestamp=timezone.now()
         )
         self.assertEqual(event.get_cost(), Decimal('10.00'))
-``` 
+```
+
+## See Also
+
+- [DEVELOPER_GUIDE](DEVELOPER_GUIDE.md) - соседняя страница раздела
+- [README](README.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска

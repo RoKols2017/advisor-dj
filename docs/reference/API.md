@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[Back to README](../../README.md) · [models →](models.md)
+
 # API Endpoints
 
 - Приложение использует серверный рендеринг Django (не DRF API).
@@ -33,3 +35,9 @@ owner: "@rom"
 - Передача токена: заголовок `X-Import-Token`.
 - Для HTML-форм также допускается поле `import_token` в body.
 - При отсутствии/невалидном токене сервер возвращает `403 Forbidden`.
+
+## See Also
+
+- [models](models.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска
+- [Troubleshooting](../troubleshooting.md) - диагностика проблем

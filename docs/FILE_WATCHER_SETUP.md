@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← ENV Reference](ENV.md) · [Back to README](../README.md) · [Runbook →](RUNBOOK.md)
+
 # Настройка загрузчика файлов (File Watcher)
 
 ## Обзор
@@ -274,6 +276,8 @@ find data/processed -type f -mtime +30 -exec mv {} data/archive/ \;
 ./scripts/check_import_status.sh
 ```
 
+## See Also
 
-
-
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

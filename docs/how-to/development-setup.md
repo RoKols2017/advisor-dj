@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[Back to README](../../README.md) · [docker-deployment →](docker-deployment.md)
+
 # Development Setup
 
 ## Prerequisites
@@ -61,3 +63,9 @@ mypy .
 - Основной URL: `http://127.0.0.1:8000`
 - Логин: `/accounts/login/`
 - Health: `/health/`
+
+## See Also
+
+- [docker-deployment](docker-deployment.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска
+- [Troubleshooting](../troubleshooting.md) - диагностика проблем

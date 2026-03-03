@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← Deploy Plan](DEPLOY_PLAN.md) · [Back to README](../README.md) · [Nginx Setup →](NGINX_SETUP.md)
+
 # 🚀 Руководство по деплою Print Advisor
 
 ## 🏗️ **Что такое деплой и зачем он нужен?**
@@ -333,3 +335,9 @@ docker compose exec db psql -U advisor -d advisor  # В базу данных
 
 *Создано: $(date)*  
 *Версия: 1.0*
+
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[Back to README](../README.md) · [File Watcher Setup →](FILE_WATCHER_SETUP.md)
+
 ## Основные переменные окружения
 
 | Переменная | Назначение | Пример/дефолт |
@@ -93,3 +95,9 @@ owner: "@rom"
 - Проверять, что `DATABASE_URL` не попадает в логи приложения.
 - Минимальные привилегии: отдельный пользователь БД для приложения.
 - Разные пароли/базы в dev/prod; регулярная ротация паролей.
+
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

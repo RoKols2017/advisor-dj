@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← File Watcher Setup](FILE_WATCHER_SETUP.md) · [Back to README](../README.md) · [Status →](STATUS.md)
+
 # Runbook
 
 ## 1) Управление стеком
@@ -166,3 +168,9 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml exec web python m
 - `docs/DEPLOYMENT_READINESS.md`
 - `docs/ENV.md`
 - `docs/FILE_WATCHER_SETUP.md`
+
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

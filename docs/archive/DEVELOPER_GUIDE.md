@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← DEVELOPER](DEVELOPER.md) · [Back to README](../../README.md) · [docstrings →](docstrings.md)
+
 # Developer Guide
 
 ## Overview
@@ -128,4 +130,10 @@ docker-compose up --build
 ---
 
 ## Contacts
-For questions and support, contact the project maintainer. 
+For questions and support, contact the project maintainer.
+
+## See Also
+
+- [DEVELOPER](DEVELOPER.md) - соседняя страница раздела
+- [docstrings](docstrings.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска

@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← Nginx Setup](NGINX_SETUP.md) · [Back to README](../README.md) · [Nginx Implementation →](NGINX_REVERSE_PROXY_IMPLEMENTATION.md)
+
 # Архитектура Nginx Reverse Proxy для инфраструктуры
 
 ## Обзор
@@ -229,3 +231,8 @@ healthcheck:
 
 **Никаких изменений в основном конфиге Nginx не требуется.**
 
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

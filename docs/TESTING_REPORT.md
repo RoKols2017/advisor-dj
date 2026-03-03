@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← De-scoped Items](DE_SCOPED.md) · [Back to README](../README.md)
+
 # Testing Report
 
 ## 📊 Executive Summary
@@ -126,3 +128,9 @@ pytest tests/integration/ -q
 ## 🎉 Заключение
 
 Проект **Print Advisor** имеет рабочую тестовую базу и стабильный quality pipeline. Текущее качество подтверждается запуском тестов и проверками в CI; конкретный процент покрытия берется из последнего CI-отчета.
+
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

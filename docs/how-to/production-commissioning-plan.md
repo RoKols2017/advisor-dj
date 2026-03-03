@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← go-live-day-checklist](go-live-day-checklist.md) · [Back to README](../../README.md) · [production-deployment →](production-deployment.md)
+
 # План ввода в эксплуатацию (VM -> ЛВС)
 
 Правило фиксации прогресса:
@@ -100,3 +102,9 @@ No-Go:
 - [ ] Привести проект к единому форматированию `black --check .` (сейчас не green на исторических файлах).
 - [ ] Зафиксировать релиз-кандидат (commit/tag) после финального согласования изменений.
 - [ ] Заменить self-signed TLS на доверенный сертификат (внутренний CA/PKI).
+
+## See Also
+
+- [go-live-day-checklist](go-live-day-checklist.md) - соседняя страница раздела
+- [production-deployment](production-deployment.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска

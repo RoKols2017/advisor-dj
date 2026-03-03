@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← README](README.md) · [Back to README](../../README.md) · [vm-deploy-commands →](vm-deploy-commands.md)
+
 ## Цель
 
 Организовать безопасную и надежную загрузку файлов из трех источников:
@@ -201,3 +203,9 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml logs watcher --ta
 2. Подключить `print1`.
 3. Подключить `print2`.
 4. После стабилизации включить алерты по backlog и ошибкам.
+
+## See Also
+
+- [README](README.md) - соседняя страница раздела
+- [vm-deploy-commands](vm-deploy-commands.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска

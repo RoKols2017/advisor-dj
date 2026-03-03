@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[Back to README](../../README.md) · [README →](README.md)
+
 # Architecture Notes
 
 ## High-level overview
@@ -27,3 +29,9 @@ owner: "@rom"
 
 - Часть сложной агрегации дерева реализована на уровне Python-кода во view.
 - Исторические документы в `docs/` содержат аналитические срезы, которые могут отличаться от текущего состояния кода.
+
+## See Also
+
+- [README](README.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска
+- [Troubleshooting](../troubleshooting.md) - диагностика проблем

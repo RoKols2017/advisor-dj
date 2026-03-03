@@ -1,219 +1,68 @@
----
-title: "Print Advisor"
-type: project
-status: draft
-last_verified: "2026-02-20"
-verified_against_commit: "latest"
-owner: "@rom"
----
+# Print Advisor
 
-# Print Advisor 🖨️
+> Django-приложение для импорта, мониторинга и анализа печати из JSON/CSV источников.
 
 [![CI](https://img.shields.io/badge/ci-passing-brightgreen)](#) [![Coverage](https://img.shields.io/badge/coverage-see%20CI-blue)](#) [![Status](https://img.shields.io/badge/status-active-brightgreen)](#)
 
-## 📊 Статус проекта
+Print Advisor объединяет веб-интерфейс для операторов и фоновый watcher, который автоматически подхватывает файлы, загружает события печати в БД и раскладывает обработанные/ошибочные данные по отдельным каталогам.
 
-- Этап: draft (MVP)
-- Основные риски/баги: см. `docs/STATUS.md`
-
-## 🛠️ Технологии
-
-- Backend: Python 3.13, Django 5.x
-- DB: SQLite (локально), PostgreSQL 15 (production)
-- UI: Django Templates, Bootstrap 5
-- Дополнительно: django-tables2, django-filter, django-import-export
-- Контейнеризация: Docker, Docker Compose
-- Мониторинг: Автоматический watcher для обработки файлов (JSON/CSV)
-
-## 🚀 Быстрый старт (WSL/Ubuntu)
+## Быстрый старт
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env || true
 python manage.py migrate
-python manage.py createsuperuser
 python manage.py runserver 0.0.0.0:8000
 ```
 
-Откройте `http://127.0.0.1:8000` (админка: `/admin`).
+Откройте `http://127.0.0.1:8000` (админка: `http://127.0.0.1:8000/admin`).
 
-## 🏗️ Docker / Production
+## Ключевые возможности
 
-### Архитектура
+- Автоматический импорт печатных событий и пользователей из `JSON`/`CSV`
+- Разделение файлов на `watch`, `processed`, `quarantine` для устойчивой обработки
+- Веб-дашборды и health endpoint для операционного контроля
+- Запуск в Docker (`web`, `watcher`, `db`) с поддержкой reverse proxy
 
-Приложение состоит из следующих сервисов:
-- **nginx**: Nginx reverse proxy (единая точка входа, порт 80/443)
-- **web**: Django веб-приложение (доступно через Nginx)
-- **watcher**: Демон мониторинга каталога для автоматического импорта данных
-- **db**: PostgreSQL 15 база данных (порт 5432)
-
-Все сервисы имеют политику автоматического перезапуска (`restart: unless-stopped`).
-
-**Сети Docker:**
-- `reverse-proxy-network` — общая сеть для Nginx и backend-сервисов
-- `advisor-network` — изолированная сеть для сервисов приложения
-
-### Quick Start with Docker
-```bash
-# Клонировать и настроить
-git clone git@github.com:RoKols2017/advisor-dj.git
-cd advisor-dj
-
-# Сгенерировать production env файл со всеми необходимыми ключами
-./scripts/generate_env.sh --production
-
-# Или интерактивный режим для настройки параметров
-# ./scripts/generate_env.sh --production --interactive
-
-# Создать каталоги для данных
-mkdir -p data/{watch,processed,quarantine}
-sudo chmod 777 data/{watch,processed,quarantine}
-
-# Создать сеть для reverse proxy (один раз)
-docker network create reverse-proxy-network
-
-# Запустить Nginx reverse proxy
-docker compose -f docker-compose.proxy.yml up -d
-
-# Запустить production-стек приложения
-docker compose -f docker-compose.prod.yml --env-file .env.prod build
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
-
-# Выполнить миграции
-docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py migrate
-
-# Создать суперпользователя
-docker compose -f docker-compose.prod.yml --env-file .env.prod exec web python manage.py createsuperuser
-
-# Проверить статус
-docker compose -f docker-compose.prod.yml --env-file .env.prod ps
-docker compose -f docker-compose.proxy.yml ps
-SMOKE_COMPOSE_FILE=docker-compose.prod.yml ./scripts/smoke.sh
-```
-
-### Автозапуск при старте системы
-
-Для автоматического запуска контейнеров при перезагрузке сервера:
+## Пример
 
 ```bash
-sudo cp advisor-dj.service /etc/systemd/system/
-# Если проект размещен не в /opt/advisor-dj, обновить WorkingDirectory
-sudo sed -i 's|^WorkingDirectory=.*|WorkingDirectory=/path/to/advisor-dj|' /etc/systemd/system/advisor-dj.service
-sudo systemctl daemon-reload
-sudo systemctl enable advisor-dj.service
-sudo systemctl start advisor-dj.service
+# 1) Поднять стек
+docker compose up --build -d
+
+# 2) Применить миграции
+docker compose exec web python manage.py migrate
+
+# 3) Проверить health
+curl http://localhost/health
+
+# 4) Положить файл для watcher
+cp ./tests/fixtures/events_valid.json ./data/watch/
+docker compose logs watcher --tail=50
 ```
 
-### Автоматический импорт данных
+Если импорт успешен, файл переместится в `data/processed/`.
 
-Watcher автоматически отслеживает каталог `data/watch/` и обрабатывает:
-- **JSON-файлы** → импорт событий печати
-- **CSV-файлы** → импорт пользователей
+## Документация
 
-Обработанные файлы перемещаются в `data/processed/`, файлы с ошибками — в `data/quarantine/`.
+| Guide | Description |
+|-------|-------------|
+| [Getting Started](docs/getting-started.md) | Установка, запуск и первый импорт |
+| [Configuration](docs/configuration.md) | Переменные окружения и профили |
+| [Architecture](docs/architecture.md) | Структура проекта и поток данных |
+| [Deployment](docs/deployment.md) | Docker/Production и запуск в ЛВС |
+| [Operations](docs/operations.md) | Runbook, watcher и операционные задачи |
+| [Testing](docs/testing.md) | Тесты, покрытие и smoke-проверки |
+| [Troubleshooting](docs/troubleshooting.md) | Частые проблемы и быстрые фиксы |
 
-Для многосерверной загрузки (DC + 2 print servers) рекомендуется транзитная схема `inbox -> ingest -> watch`, см. `docs/how-to/transit-ingest-pipeline.md`.
+Дополнительно:
+- Подробный чеклист деплоя: `docs/DEPLOYMENT_CHECKLIST.md`
+- Readiness для нового сервера: `docs/DEPLOYMENT_READINESS.md`
+- Nginx/HTTPS детали: `docs/NGINX_REVERSE_PROXY_IMPLEMENTATION.md`, `docs/WINDOWS_CA_CERTIFICATES.md`
+- Статус проекта и риски: `docs/STATUS.md`
 
-После запуска стека приложение доступно через reverse proxy: `http://localhost/`.
+## Лицензия
 
-Проверки health:
-- через Nginx (с хоста): `curl http://localhost/health`
-- напрямую внутри web-контейнера: `docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T web curl -f -s http://localhost:8000/health/`
-
-### Production Deployment
-
-- **Полная документация**: `docs/DEPLOYMENT_READINESS.md` и `docs/DEPLOYMENT_CHECKLIST.md`
-- **Docker Compose**: `docs/DEPLOY_PLAN.md`
-- **Nginx Reverse Proxy**: `docs/NGINX_REVERSE_PROXY_ARCHITECTURE.md` и `docs/NGINX_REVERSE_PROXY_IMPLEMENTATION.md`
-- **Health Checks**: автоматические проверки всех сервисов
-- **Monitoring**: логи, метрики, smoke-тесты
-- **CI/CD**: GitHub Actions с Docker образами
-- **Развертывание в ЛВС без интернета**: см. `docs/DEPLOYMENT_CHECKLIST.md`
-
-## 🧪 Тестирование
-
-```bash
-# Быстрые тесты
-pytest -q
-
-# С покрытием кода
-pytest --cov=. --cov-report=term-missing --cov-fail-under=70
-
-# Только unit-тесты
-pytest tests/unit/ -q
-
-# Интеграционные тесты
-pytest tests/integration/ -q
-
-# Все тесты с маркерами
-pytest -m "not slow" -q
-```
-
-**Пороги покрытия:**
-- Общий проект: ≥ 70% (текущее значение в `pytest.ini`; целевой порог может быть выше по политике команды)
-- Изменённые файлы: ≥ 85%
-- Всего тестов: 51 (локально: 51 passed)
-
-## 🔄 CI/CD
-
-### GitHub Actions Pipeline
-1. **Lint & Type Check**: ruff, black, mypy
-2. **Tests**: pytest с покрытием (SQLite + PostgreSQL) 
-3. **Security**: pip-audit проверка зависимостей
-4. **Docker Build**: образы web и watcher сервисов
-5. **Smoke Tests**: полный стек + health checks
-
-### Artifacts
-- **Docker Images**: `ghcr.io/owner/repo:tag-web`, `ghcr.io/owner/repo:tag-watcher`
-- **Coverage Reports**: XML + HTML
-- **Security Reports**: pip-audit JSON
-
-## 📁 Структура проекта
-
-```
-advisor-dj/
-├── accounts/          # Управление пользователями и аутентификация
-├── printing/          # Основное приложение (модели, views, watcher)
-├── config/            # Настройки Django (settings, urls, logging)
-├── templates/         # HTML шаблоны
-├── static/            # Статические файлы (CSS, JS)
-├── data/              # Каталоги для обработки файлов (watch, processed, quarantine)
-├── docs/              # Документация
-├── scripts/           # Вспомогательные скрипты (smoke tests, monitoring)
-├── docker-compose.yml # Конфигурация Docker Compose
-├── Dockerfile         # Образ для web-сервиса
-├── Dockerfile.watcher # Образ для watcher-сервиса
-├── advisor-dj.service # Systemd unit для автозапуска
-└── manage.py          # Django management скрипт
-```
-
-## 📚 Документация
-
-### Основная документация
-
-- **Развертывание**: 
-  - [docs/DEPLOYMENT_READINESS.md](docs/DEPLOYMENT_READINESS.md) - готовность и чеклист для нового сервера
-  - [docs/DEPLOYMENT_CHECKLIST.md](docs/DEPLOYMENT_CHECKLIST.md) - подробный чеклист для ЛВС без интернета
-  - [docs/DEPLOY_PLAN.md](docs/DEPLOY_PLAN.md) - общий план деплоя
-  - [docs/DEPLOY_GUIDE.md](docs/DEPLOY_GUIDE.md) - руководство по деплою
-- **Watcher и файлы**: [docs/FILE_WATCHER_SETUP.md](docs/FILE_WATCHER_SETUP.md) - настройка watcher и прав доступа
-- **Windows транзитная загрузка**: [docs/how-to/transit-ingest-pipeline.md](docs/how-to/transit-ingest-pipeline.md) - схема для 3 источников через SMB/Scheduler
-- **Эксплуатация**: [docs/RUNBOOK.md](docs/RUNBOOK.md) - операционные задачи
-- **Статус проекта**: [docs/STATUS.md](docs/STATUS.md) - текущий статус и риски
-- **Переменные окружения**: [docs/ENV.md](docs/ENV.md) - описание переменных окружения
-- **SSL/HTTPS**: [docs/WINDOWS_CA_CERTIFICATES.md](docs/WINDOWS_CA_CERTIFICATES.md) - получение и применение сертификатов от Windows Server CA
-
-### Дополнительная документация
-
-- План рефакторинга: [docs/REFACTOR_PLAN.md](docs/REFACTOR_PLAN.md)
-- Критический анализ: [docs/CRITICAL_ANALYSIS.md](docs/CRITICAL_ANALYSIS.md)
-- План разработки: [docs/DEV_PLAN.md](docs/DEV_PLAN.md)
-- How-to гайды: [docs/how-to/](docs/how-to/) - Windows SMB шары, разработка, деплой
-- Справочная информация: `docs/concepts/`, `docs/reference/`
-- Архив: `docs/archive/`
-
-## 📞 Поддержка
-
-- Создайте Issue с описанием проблемы и приложите логи из `logs/`.
+Внутренний проект команды. Правила использования определяются владельцем репозитория.

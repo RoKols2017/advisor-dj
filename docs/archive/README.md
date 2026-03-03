@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← docstrings](docstrings.md) · [Back to README](../../README.md)
+
 # Print Advisor 🖨️
 
 Система мониторинга и анализа печати для организаций. Позволяет отслеживать использование принтеров, собирать статистику и управлять печатной инфраструктурой.
@@ -257,4 +259,10 @@ MIT License. См. файл LICENSE для деталей.
 
 - Django Team
 - Сообщество Python
-- Всем контрибьюторам проекта 
+- Всем контрибьюторам проекта
+
+## See Also
+
+- [docstrings](docstrings.md) - соседняя страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска
+- [Troubleshooting](../troubleshooting.md) - диагностика проблем

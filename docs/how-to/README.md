@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← production-deployment](production-deployment.md) · [Back to README](../../README.md) · [transit-ingest-pipeline →](transit-ingest-pipeline.md)
+
 # How-To
 
 - [Development setup](development-setup.md) - локальная разработка, venv, тесты
@@ -19,3 +21,9 @@ owner: "@rom"
 - [Production commissioning plan](production-commissioning-plan.md) - рабочий чеклист ввода в эксплуатацию с отметкой выполненных пунктов
 - [Go-live day checklist](go-live-day-checklist.md) - короткий операционный чеклист на день запуска
 - [VM deploy commands](vm-deploy-commands.md) - команды развертывания на VM в двух форматах (с комментариями и без)
+
+## See Also
+
+- [production-deployment](production-deployment.md) - соседняя страница раздела
+- [transit-ingest-pipeline](transit-ingest-pipeline.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска

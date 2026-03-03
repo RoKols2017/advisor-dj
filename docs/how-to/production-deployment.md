@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← production-commissioning-plan](production-commissioning-plan.md) · [Back to README](../../README.md) · [README →](README.md)
+
 # Production Deployment
 
 ## 1) Settings profile
@@ -50,3 +52,9 @@ SMOKE_COMPOSE_FILE=docker-compose.prod.yml SMOKE_ENV_FILE=.env.prod ./scripts/sm
 - `docs/DEPLOYMENT_CHECKLIST.md`
 - `docs/DEPLOYMENT_READINESS.md`
 - `docs/RUNBOOK.md`
+
+## See Also
+
+- [production-commissioning-plan](production-commissioning-plan.md) - соседняя страница раздела
+- [README](README.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска

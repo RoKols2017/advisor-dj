@@ -8,6 +8,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← Nginx Implementation](NGINX_REVERSE_PROXY_IMPLEMENTATION.md) · [Back to README](../README.md) · [Project Analysis →](PROJECT_ANALYSIS.md)
+
 # Получение и применение SSL сертификатов от Windows Server CA
 
 ## 📋 Оглавление
@@ -621,3 +623,9 @@ docker compose -f docker-compose.proxy.yml exec nginx ls -la /etc/nginx/certs/se
 ---
 
 *Последнее обновление: 2025-01-12*
+
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

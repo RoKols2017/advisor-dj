@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← development-setup](development-setup.md) · [Back to README](../../README.md) · [go-live-day-checklist →](go-live-day-checklist.md)
+
 # Docker Deployment
 
 ## Stack
@@ -57,3 +59,9 @@ curl -f http://localhost/health/
 docker compose down
 docker compose -f docker-compose.proxy.yml down
 ```
+
+## See Also
+
+- [development-setup](development-setup.md) - соседняя страница раздела
+- [go-live-day-checklist](go-live-day-checklist.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска

@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← Runbook](RUNBOOK.md) · [Back to README](../README.md) · [Deployment Readiness →](DEPLOYMENT_READINESS.md)
+
 # Status
 
 - Current state:
@@ -26,3 +28,9 @@ owner: "@rom"
   - Исправлено: подключение `printing.signals` через `PrintingConfig.ready()` и глобальная инвалидация date-specific кэша статистики.
   - Исправлено: watcher теперь отправляет файл в quarantine при истечении deadline (раньше файл мог оставаться в `watch/`).
   - Исправлено: Postgres job в CI использует `config.settings.test_postgres` вместо in-memory SQLite.
+
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

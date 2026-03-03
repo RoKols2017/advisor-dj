@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← transit-ingest-pipeline](transit-ingest-pipeline.md) · [Back to README](../../README.md) · [vm-lan-deployment-preflight →](vm-lan-deployment-preflight.md)
+
 # VM Deploy Commands
 
 ## Вариант 1: команды с комментариями
@@ -88,3 +90,9 @@ crontab -l
 - Текущий логин: `admin`
 - Текущий пароль: `admin123`
 - После входа обязательно сменить пароль.
+
+## See Also
+
+- [transit-ingest-pipeline](transit-ingest-pipeline.md) - соседняя страница раздела
+- [vm-lan-deployment-preflight](vm-lan-deployment-preflight.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска

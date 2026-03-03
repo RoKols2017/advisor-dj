@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← Deployment Checklist](DEPLOYMENT_CHECKLIST.md) · [Back to README](../README.md) · [Deploy Guide →](DEPLOY_GUIDE.md)
+
 ## 🐳 Docker Services
 
 ### Сервисы
@@ -276,3 +278,9 @@ docker compose -f docker-compose.prod.yml ps
 9) Финальная валидация
 - `python manage.py check --deploy` — без предупреждений.
 - Smoke/health зелёные, reverse‑proxy выдаёт валидный TLS, watcher активен.
+
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

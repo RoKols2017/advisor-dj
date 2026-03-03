@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← vm-lan-preflight-status](vm-lan-preflight-status.md) · [Back to README](../../README.md)
+
 ## Цель
 Подключить выгрузку файлов с Windows серверов через SMB в транзитные каталоги Linux, затем переносить их в watcher через локальный ingest-процесс.
 
@@ -50,4 +52,3 @@ sudo systemctl enable --now advisor-ingest-mover.timer
 
 ## См. также
 - `docs/how-to/transit-ingest-pipeline.md`
-

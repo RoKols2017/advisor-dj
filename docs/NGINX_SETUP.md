@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← Deploy Guide](DEPLOY_GUIDE.md) · [Back to README](../README.md) · [Nginx Architecture →](NGINX_REVERSE_PROXY_ARCHITECTURE.md)
+
 # Быстрая настройка Nginx Reverse Proxy
 
 ## Этап A: HTTP (для разработки и тестирования)
@@ -111,3 +113,8 @@ make down
 
 Подробная инструкция: `docs/NGINX_REVERSE_PROXY_IMPLEMENTATION.md`
 
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

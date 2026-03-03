@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← Development Plan](DEV_PLAN.md) · [Back to README](../README.md) · [De-scoped Items →](DE_SCOPED.md)
+
 ## Этап 1: Безопасность и конфиги (1–2 недели) — выполнено
 
 Цель: безрисковый продакшн-конфиг.
@@ -107,3 +109,8 @@ DoD:
 - Make-цели для прод: `up-prod`, `migrate-prod`, `smoke-prod`, `logs-prod`, `down-prod`.
 - Обновить `docs/DEPLOY_PLAN.md`, добавить `docs/RUNBOOK.md` и зафиксировать чек-лист прод-валидации.
 
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

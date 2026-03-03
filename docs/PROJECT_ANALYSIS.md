@@ -8,6 +8,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← Windows CA Certificates](WINDOWS_CA_CERTIFICATES.md) · [Back to README](../README.md) · [Critical Analysis →](CRITICAL_ANALYSIS.md)
+
 # 📊 Анализ проекта Print Advisor
 
 ## 🎯 Общая информация
@@ -356,3 +358,9 @@ owner: "@rom"
 
 *Анализ выполнен: 2025-01-30*  
 *Версия проекта: latest commit*
+
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

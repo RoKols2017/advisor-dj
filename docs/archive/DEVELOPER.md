@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[Back to README](../../README.md) · [DEVELOPER_GUIDE →](DEVELOPER_GUIDE.md)
+
 # 🛠️ Руководство разработчика Print Advisor
 
 ## 📚 Содержание
@@ -526,4 +528,10 @@ LOGGING = {
 1. Запуск тестов
 2. Проверка стиля кода
 3. Сборка статики
-4. Деплой на тестовый сервер 
+4. Деплой на тестовый сервер
+
+## See Also
+
+- [DEVELOPER_GUIDE](DEVELOPER_GUIDE.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска
+- [Troubleshooting](../troubleshooting.md) - диагностика проблем

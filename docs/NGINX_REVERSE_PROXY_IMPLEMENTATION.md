@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← Nginx Architecture](NGINX_REVERSE_PROXY_ARCHITECTURE.md) · [Back to README](../README.md) · [Windows CA Certificates →](WINDOWS_CA_CERTIFICATES.md)
+
 # Пошаговый план внедрения Nginx Reverse Proxy
 
 ## Этап A: Подготовка (с интернетом)
@@ -720,3 +722,8 @@ docker compose -f docker-compose.proxy.yml exec nginx tail -f /var/log/nginx/err
 docker compose -f docker-compose.proxy.yml exec nginx nginx -t
 ```
 
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем

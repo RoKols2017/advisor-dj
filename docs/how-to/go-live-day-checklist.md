@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← docker-deployment](docker-deployment.md) · [Back to README](../../README.md) · [production-commissioning-plan →](production-commissioning-plan.md)
+
 # Go-Live Day Checklist
 
 ## 1) Pre-start
@@ -111,3 +113,9 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T db psql -
 - [ ] Зафиксировать время запуска и версию релиза.
 - [ ] Сохранить `.env.prod` и backup-артефакты в защищенном хранилище.
 - [ ] Отдельной задачей заменить self-signed сертификат на доверенный.
+
+## See Also
+
+- [docker-deployment](docker-deployment.md) - соседняя страница раздела
+- [production-commissioning-plan](production-commissioning-plan.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска

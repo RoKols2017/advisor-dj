@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← vm-lan-deployment-preflight](vm-lan-deployment-preflight.md) · [Back to README](../../README.md) · [windows-share →](windows-share.md)
+
 # Статус выполнения pre-flight (VM -> ЛВС)
 
 Документ фиксирует фактический прогресс по `docs/how-to/vm-lan-deployment-preflight.md`.
@@ -89,3 +91,9 @@ curl http://localhost/health
 docker compose -f docker-compose.prod.yml --env-file .env.prod logs web --tail=100
 docker compose -f docker-compose.prod.yml --env-file .env.prod logs watcher --tail=100
 ```
+
+## See Also
+
+- [vm-lan-deployment-preflight](vm-lan-deployment-preflight.md) - соседняя страница раздела
+- [windows-share](windows-share.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска

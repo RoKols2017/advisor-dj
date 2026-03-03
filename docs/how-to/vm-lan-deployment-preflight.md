@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← vm-deploy-commands](vm-deploy-commands.md) · [Back to README](../../README.md) · [vm-lan-preflight-status →](vm-lan-preflight-status.md)
+
 # VM Deployment Pre-Flight and LAN Cutover Plan
 
 План для сценария:
@@ -161,3 +163,9 @@ No-Go, если:
 - Заменить временный self-signed cert в Nginx.
 - Перезапустить Nginx и повторить TLS-проверки.
 - Вывести временный root CA из доверенных хранилищ по плану.
+
+## See Also
+
+- [vm-deploy-commands](vm-deploy-commands.md) - соседняя страница раздела
+- [vm-lan-preflight-status](vm-lan-preflight-status.md) - следующая страница раздела
+- [Deployment](../deployment.md) - актуальные инструкции запуска

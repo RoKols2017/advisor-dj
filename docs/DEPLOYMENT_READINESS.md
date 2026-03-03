@@ -7,6 +7,8 @@ verified_against_commit: "latest"
 owner: "@rom"
 ---
 
+[← Status](STATUS.md) · [Back to README](../README.md) · [Deployment Checklist →](DEPLOYMENT_CHECKLIST.md)
+
 # Готовность к развертыванию на новом сервере
 
 **Дата проверки:** 2025-12-23  
@@ -349,3 +351,9 @@ docker compose logs watcher
 5. Выполнить миграции и создать суперпользователя
 
 После этого приложение будет готово к работе.
+
+## See Also
+
+- [Getting Started](getting-started.md) - базовый путь запуска
+- [Deployment](deployment.md) - актуальный сценарий деплоя
+- [Troubleshooting](troubleshooting.md) - диагностика типовых проблем
